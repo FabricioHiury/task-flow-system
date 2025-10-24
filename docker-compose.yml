@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: task-flow-postgres
+    environment:
+      POSTGRES_DB: taskflow
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: taskflow123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - task-flow-network
+
+  # Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: task-flow-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: taskflow
+      RABBITMQ_DEFAULT_PASS: taskflow123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - task-flow-network
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: task-flow-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - task-flow-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+    container_name: task-flow-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://taskflow:taskflow123@postgres:5432/taskflow
+      - RABBITMQ_URL=amqp://taskflow:taskflow123@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+    depends_on:
+      - postgres
+      - rabbitmq
+      - redis
+    networks:
+      - task-flow-network
+    volumes:
+      - ./apps/api-gateway:/app
+      - /app/node_modules
+
+  # Task Service
+  task-service:
+    build:
+      context: .
+      dockerfile: apps/task-service/Dockerfile
+    container_name: task-flow-task-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://taskflow:taskflow123@postgres:5432/taskflow
+      - RABBITMQ_URL=amqp://taskflow:taskflow123@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - rabbitmq
+      - redis
+    networks:
+      - task-flow-network
+    volumes:
+      - ./apps/task-service:/app
+      - /app/node_modules
+
+  # Notification Service
+  notification-service:
+    build:
+      context: .
+      dockerfile: apps/notification-service/Dockerfile
+    container_name: task-flow-notification-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://taskflow:taskflow123@postgres:5432/taskflow
+      - RABBITMQ_URL=amqp://taskflow:taskflow123@rabbitmq:5672
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - rabbitmq
+      - redis
+    networks:
+      - task-flow-network
+    volumes:
+      - ./apps/notification-service:/app
+      - /app/node_modules
+
+  # Frontend Web App
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: task-flow-web
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:3000/api
+      - VITE_WS_URL=ws://localhost:3002
+    depends_on:
+      - api-gateway
+    networks:
+      - task-flow-network
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  redis_data:
+
+networks:
+  task-flow-network:
+    driver: bridge
