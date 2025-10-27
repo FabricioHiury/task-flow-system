@@ -55,6 +55,11 @@ export class TasksController {
     return this.tasksService.findByAssignee(+userId);
   }
 
+  @Get(':id/history')
+  getTaskHistory(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return this.tasksService.getTaskHistory(+id, user.sub);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.tasksService.findOne(+id, user.sub);

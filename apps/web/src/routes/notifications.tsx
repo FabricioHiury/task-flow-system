@@ -1,6 +1,6 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router'
 import { useAuth } from '@/contexts/auth-context'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { 
@@ -21,6 +21,7 @@ import {
   useMarkAllNotificationsAsRead, 
   useDeleteNotification 
 } from '@/hooks/useNotifications'
+import { NotificationListSkeleton } from '@/components/skeletons/notification-skeleton'
 
 function NotificationsPage() {
   const { isAuthenticated, isLoading } = useAuth()
@@ -191,9 +192,7 @@ function NotificationsPage() {
 
       {/* Lista de Notificações */}
       {notificationsLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+        <NotificationListSkeleton />
       ) : filteredNotifications.length > 0 ? (
         <div className="space-y-4">
           {filteredNotifications.map((notification) => (

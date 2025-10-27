@@ -1,35 +1,19 @@
-import { createFileRoute, Navigate, Link } from '@tanstack/react-router'
-import { useAuth } from '@/contexts/auth-context'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import { useState } from 'react'
+import { createFileRoute, Navigate, Link } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { 
-  CheckSquare, 
-  Clock, 
-  AlertCircle, 
-  Plus, 
-  Search,
-  Filter,
-  Edit,
-  Trash2,
-  Calendar
-} from 'lucide-react'
+import { useAuth } from '@/contexts/auth-context'
 import { useTasks, useCreateTask, useDeleteTask } from '@/hooks/useTasks'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Plus, Search, Trash2, Edit, CheckSquare, Clock, Calendar } from 'lucide-react'
+import { TaskListSkeleton } from '@/components/skeletons/task-skeleton'
 
 const createTaskSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório'),
@@ -73,6 +57,44 @@ function TasksPage() {
     return <Navigate to="/login" />
   }
 
+  if (tasksLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Tarefas</h1>
+          <Button disabled>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Tarefa
+          </Button>
+        </div>
+        
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Buscar tarefas..."
+                disabled
+                className="w-full"
+              />
+            </div>
+            <Select disabled>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+            </Select>
+            <Select disabled>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Prioridade" />
+              </SelectTrigger>
+            </Select>
+          </div>
+        </div>
+
+        <TaskListSkeleton />
+      </div>
+    )
+  }
+
   const filteredTasks = tasks?.filter((task) => {
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          task.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -94,28 +116,6 @@ function TasksPage() {
   const handleDeleteTask = (id: string) => {
     if (confirm('Tem certeza que deseja excluir esta tarefa?')) {
       deleteTaskMutation.mutate(id)
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'DONE':
-        return 'bg-green-100 text-green-800'
-      case 'IN_PROGRESS':
-        return 'bg-blue-100 text-blue-800'
-      default:
-        return 'bg-orange-100 text-orange-800'
-    }
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'HIGH':
-        return 'bg-red-100 text-red-800'
-      case 'MEDIUM':
-        return 'bg-yellow-100 text-yellow-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
     }
   }
 

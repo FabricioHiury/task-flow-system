@@ -112,7 +112,7 @@ export function useUpdateTaskStatus() {
       
       return { previousTask }
     },
-    onError: (err, { id }, context) => {
+    onError: (_, { id }, context) => {
       // Reverter em caso de erro
       if (context?.previousTask) {
         queryClient.setQueryData(taskKeys.detail(id), context.previousTask)

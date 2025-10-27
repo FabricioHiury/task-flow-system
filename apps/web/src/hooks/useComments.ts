@@ -42,9 +42,7 @@ export function useDeleteComment() {
 
   return useMutation({
     mutationFn: (id: string) => commentService.deleteComment(id),
-    onSuccess: (_, deletedId) => {
-      // Invalidar todas as listas de comentários
-      // Como não temos o taskId aqui, invalidamos todas
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: commentKeys.lists() })
     },
     onError: (error: any) => {
@@ -93,7 +91,7 @@ export function useCreateCommentOptimistic() {
       
       return { previousComments, tempComment }
     },
-    onError: (err, newComment, context) => {
+    onError: (_, newComment, context) => {
       // Reverter em caso de erro
       if (context?.previousComments) {
         queryClient.setQueryData(

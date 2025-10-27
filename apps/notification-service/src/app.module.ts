@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { databaseConfig } from './config/database.config';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -11,8 +11,9 @@ import { WebSocketModule } from './websocket/websocket.module';
       isGlobal: true,
     }),
     TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
       useFactory: databaseConfig,
-      inject: [ConfigModule],
+      inject: [ConfigService],
     }),
     NotificationsModule,
     WebSocketModule,

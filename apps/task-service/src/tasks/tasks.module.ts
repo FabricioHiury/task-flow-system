@@ -5,11 +5,13 @@ import { JwtModule } from '@nestjs/jwt';
 import { TasksService } from './tasks.service';
 import { TasksController } from './tasks.controller';
 import { Task } from './task.entity';
+import { TaskHistory } from './task-history.entity';
+import { TaskHistoryService } from './task-history.service';
 import { Comment } from '../comments/comment.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Task, Comment]),
+    TypeOrmModule.forFeature([Task, TaskHistory, Comment]),
     JwtModule.register({
       secret:
         process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
@@ -32,7 +34,7 @@ import { Comment } from '../comments/comment.entity';
     ]),
   ],
   controllers: [TasksController],
-  providers: [TasksService],
-  exports: [TasksService],
+  providers: [TasksService, TaskHistoryService],
+  exports: [TasksService, TaskHistoryService],
 })
 export class TasksModule {}
