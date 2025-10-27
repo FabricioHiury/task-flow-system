@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Database
   postgres:
@@ -10,7 +8,7 @@ services:
       POSTGRES_USER: taskflow
       POSTGRES_PASSWORD: taskflow123
     ports:
-      - "5433:5432"
+      - "5434:5434"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -36,7 +34,7 @@ services:
     image: redis:7-alpine
     container_name: task-flow-redis
     ports:
-      - "6380:6379"
+      - "6380:6380"
     volumes:
       - redis_data:/data
     networks:
@@ -63,9 +61,6 @@ services:
       - redis
     networks:
       - task-flow-network
-    volumes:
-      - ./apps/api-gateway:/app
-      - /app/node_modules
 
   # Task Service
   task-service:
@@ -86,9 +81,6 @@ services:
       - redis
     networks:
       - task-flow-network
-    volumes:
-      - ./apps/task-service:/app
-      - /app/node_modules
 
   # Notification Service
   notification-service:
@@ -109,9 +101,6 @@ services:
       - redis
     networks:
       - task-flow-network
-    volumes:
-      - ./apps/notification-service:/app
-      - /app/node_modules
 
   # Frontend Web App
   web:
@@ -120,7 +109,7 @@ services:
       dockerfile: apps/web/Dockerfile
     container_name: task-flow-web
     ports:
-      - "5173:5173"
+      - "5173:4173"
     environment:
       - NODE_ENV=development
       - VITE_API_URL=http://localhost:3000/api
@@ -129,9 +118,6 @@ services:
       - api-gateway
     networks:
       - task-flow-network
-    volumes:
-      - ./apps/web:/app
-      - /app/node_modules
 
 volumes:
   postgres_data:

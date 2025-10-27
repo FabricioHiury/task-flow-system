@@ -1,11 +1,10 @@
 import { createFileRoute, useNavigate, useParams } from '@tanstack/react-router'
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ArrowLeft, Calendar, Clock, Flag, MessageCircle, Send, Trash2, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
@@ -14,6 +13,8 @@ import { useTask } from '@/hooks/useTasks'
 import { useComments, useCreateComment, useDeleteComment } from '@/hooks/useComments'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
+import { TaskSkeleton } from '@/components/skeletons/task-skeleton'
+import { CommentListSkeleton } from '@/components/skeletons/comment-skeleton'
 
 const commentSchema = z.object({
   content: z.string().min(1, 'Comentário não pode estar vazio').max(500, 'Comentário muito longo'),
@@ -108,7 +109,7 @@ function TaskDetailPage() {
   if (taskLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <TaskSkeleton />
       </div>
     )
   }
@@ -238,9 +239,7 @@ function TaskDetailPage() {
 
           {/* Comments List */}
           {commentsLoading ? (
-            <div className="flex justify-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            </div>
+            <CommentListSkeleton />
           ) : comments.length > 0 ? (
             <div className="space-y-4">
               {comments.map((comment) => (

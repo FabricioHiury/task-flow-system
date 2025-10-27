@@ -1,4 +1,4 @@
-import { createFileRoute, Navigate, useNavigate, Link } from '@tanstack/react-router'
+import { createFileRoute, Navigate } from '@tanstack/react-router'
 import { useAuth } from '@/contexts/auth-context'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'

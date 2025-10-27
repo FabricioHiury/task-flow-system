@@ -16,6 +16,7 @@ export function useNotifications() {
     queryKey: notificationKeys.lists(),
     queryFn: () => notificationService.getNotifications(),
     staleTime: 1000 * 60 * 2, // 2 minutos
+    enabled: !!localStorage.getItem('token'), // Só executa se houver token
   })
 }
 
@@ -26,6 +27,7 @@ export function useUnreadNotifications() {
     queryFn: () => notificationService.getUnreadNotifications(),
     staleTime: 1000 * 30, // 30 segundos
     refetchInterval: 1000 * 60, // Refetch a cada minuto
+    enabled: !!localStorage.getItem('token'), // Só executa se houver token
   })
 }
 
@@ -36,6 +38,7 @@ export function useUnreadNotificationsCount() {
     queryFn: () => notificationService.getUnreadCount(),
     staleTime: 1000 * 30, // 30 segundos
     refetchInterval: 1000 * 60, // Refetch a cada minuto
+    enabled: !!localStorage.getItem('token'), // Só executa se houver token
   })
 }
 
@@ -92,7 +95,7 @@ export function useMarkNotificationAsRead() {
       
       return { previousNotifications, previousUnread, previousCount }
     },
-    onError: (err, id, context) => {
+    onError: (_, __, context) => {
       // Reverter em caso de erro
       if (context?.previousNotifications) {
         queryClient.setQueryData(notificationKeys.lists(), context.previousNotifications)
@@ -151,7 +154,7 @@ export function useMarkAllNotificationsAsRead() {
       
       return { previousNotifications, previousUnread, previousCount }
     },
-    onError: (err, _, context) => {
+    onError: (_, __, context) => {
       // Reverter em caso de erro
       if (context?.previousNotifications) {
         queryClient.setQueryData(notificationKeys.lists(), context.previousNotifications)

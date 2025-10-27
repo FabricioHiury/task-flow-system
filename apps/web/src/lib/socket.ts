@@ -4,11 +4,8 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3002';
 
 class SocketService {
   private socket: Socket | null = null;
-  private token: string | null = null;
 
   connect(token: string) {
-    this.token = token;
-    
     this.socket = io(SOCKET_URL, {
       auth: {
         token: `Bearer ${token}`,

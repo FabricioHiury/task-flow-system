@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientProxy } from '@nestjs/microservices';
 import { Task } from './task.entity';
+import { TaskHistoryService } from './task-history.service';
 import {
   CreateTaskDto,
   UpdateTaskDto,
@@ -17,6 +18,7 @@ export class TasksService {
     private taskRepository: Repository<Task>,
     @Inject('RABBITMQ_SERVICE')
     private rabbitClient: ClientProxy,
+    private taskHistoryService: TaskHistoryService,
   ) {}
 
   async create(createTaskDto: CreateTaskDto, userId: number): Promise<Task> {
@@ -26,6 +28,9 @@ export class TasksService {
     });
 
     const savedTask = await this.taskRepository.save(task);
+
+    // Log task creation in history
+    await this.taskHistoryService.logTaskCreation(savedTask, userId);
 
     // Emit event for task creation
     this.rabbitClient.emit('task.created', {
@@ -95,10 +100,20 @@ export class TasksService {
   ): Promise<Task> {
     const task = await this.findOne(id, userId);
 
+    // Store previous values for history
+    const previousTask = { ...task };
     const previousStatus = task.status;
     Object.assign(task, updateTaskDto);
 
     const updatedTask = await this.taskRepository.save(task);
+
+    // Log task update in history
+    await this.taskHistoryService.logTaskUpdate(
+      id,
+      previousTask,
+      updatedTask,
+      userId,
+    );
 
     // Emit event for task update
     this.rabbitClient.emit('task.updated', {
@@ -116,6 +131,9 @@ export class TasksService {
 
   async remove(id: number, userId: number): Promise<void> {
     const task = await this.findOne(id, userId);
+
+    // Log task deletion in history before removing
+    await this.taskHistoryService.logTaskDeletion(task, userId);
 
     await this.taskRepository.remove(task);
 
@@ -141,6 +159,15 @@ export class TasksService {
     }
 
     return queryBuilder.getMany();
+  }
+
+  async getTaskHistory(taskId: number, userId?: number): Promise<any[]> {
+    // Verify user has access to the task
+    if (userId) {
+      await this.findOne(taskId, userId);
+    }
+    
+    return this.taskHistoryService.getTaskHistory(taskId);
   }
 
   async findByAssignee(assigneeId: number): Promise<Task[]> {

@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { CheckSquare, Clock, AlertCircle, Plus, TrendingUp } from 'lucide-react'
 import { useTasks } from '@/hooks/useTasks'
+import { DashboardStatsSkeleton, DashboardRecentTasksSkeleton } from '@/components/skeletons/dashboard-skeleton'
+import { Skeleton } from '@/components/ui/skeleton'
 
 function DashboardPage() {
   const { isAuthenticated, isLoading, user } = useAuth()
@@ -12,8 +14,31 @@ function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <Skeleton className="h-9 w-64 mb-2" />
+          <Skeleton className="h-5 w-96" />
+        </div>
+        
+        <DashboardStatsSkeleton />
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          <DashboardRecentTasksSkeleton />
+          
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
@@ -108,8 +133,16 @@ function DashboardPage() {
           </CardHeader>
           <CardContent>
             {tasksLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-3/4 mb-2" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                ))}
               </div>
             ) : recentTasks.length > 0 ? (
               <div className="space-y-4">
