@@ -6,7 +6,7 @@ config();
 
 /**
  * Configuração centralizada de variáveis de ambiente usando Zod
- * 
+ *
  * Este arquivo fornece uma interface type-safe para acessar variáveis de ambiente
  * validadas pelo schema Zod definido em env.validation.ts
  */
@@ -34,7 +34,7 @@ class EnvironmentConfig {
         const errorMessages = error.issues
           .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
           .join('\n');
-        
+
         console.error('❌ Environment validation failed:');
         console.error(errorMessages);
         process.exit(1);
@@ -73,7 +73,7 @@ class EnvironmentConfig {
   }
 
   get corsOrigins(): string[] {
-    return this.config.CORS_ORIGINS.split(',').map(origin => origin.trim());
+    return this.config.CORS_ORIGINS.split(',').map((origin) => origin.trim());
   }
 
   // Método para verificar se estamos em desenvolvimento

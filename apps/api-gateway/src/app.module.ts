@@ -1,4 +1,4 @@
-import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -11,18 +11,20 @@ import { HealthModule } from './health/health.module';
 import { WebSocketModule } from './websocket/websocket.module';
 import { TasksModule } from './tasks/tasks.module';
 import { MicroservicesModule } from './microservices/microservices.module';
+import { GuardsModule } from './common/guards/guards.module';
 
 // Configurações
 import { validate } from './config/env.validation';
-import { configuration, databaseConfig, jwtConfig } from './config/configuration';
+import {
+  configuration,
+  databaseConfig,
+  jwtConfig,
+} from './config/configuration';
 
 // Interceptors e Filters
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-
-// Middleware
-import { JwtAuthMiddleware } from './common/middleware/jwt-auth.middleware';
 
 @Module({
   imports: [
@@ -50,9 +52,10 @@ import { JwtAuthMiddleware } from './common/middleware/jwt-auth.middleware';
     }),
     JwtModule.register({
       global: true,
-      secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '15m' },
     }),
+    GuardsModule,
     AuthModule,
     UsersModule,
     HealthModule,
@@ -75,10 +78,4 @@ import { JwtAuthMiddleware } from './common/middleware/jwt-auth.middleware';
     },
   ],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(JwtAuthMiddleware)
-      .forRoutes('*'); // Apply to all routes
-  }
-}
+export class AppModule {}

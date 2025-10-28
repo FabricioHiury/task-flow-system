@@ -43,17 +43,19 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  name: string;
+  username: string;
   email: string;
   password: string;
+  fullName?: string;
 }
 
 export interface AuthResponse {
   access_token: string;
   user: {
     id: string;
-    name: string;
+    username: string;
     email: string;
+    fullName?: string;
   };
 }
 
@@ -61,12 +63,12 @@ export interface AuthResponse {
 export const authService = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await api.post('/auth/login', data);
-    return response.data;
+    return response.data.data; 
   },
 
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
     const response = await api.post('/auth/register', data);
-    return response.data;
+    return response.data.data; 
   },
 
   logout: () => {

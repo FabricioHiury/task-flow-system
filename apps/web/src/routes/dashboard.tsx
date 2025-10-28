@@ -60,7 +60,7 @@ function DashboardPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">
-          Bem-vindo, {user?.name || 'Usuário'}!
+          Bem-vindo, {user?.username || 'Usuário'}!
         </h1>
         <p className="text-muted-foreground mt-2">
           Aqui está um resumo das suas tarefas e atividades recentes.

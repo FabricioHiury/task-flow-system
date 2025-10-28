@@ -1,4 +1,8 @@
-import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NestMiddleware,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '@nestjs/jwt';
 
@@ -26,8 +30,8 @@ export class JwtAuthMiddleware implements NestMiddleware {
         '/api-json',
       ];
 
-      const isPublicRoute = publicRoutes.some(route => 
-        req.path.startsWith(route) || req.path === '/'
+      const isPublicRoute = publicRoutes.some(
+        (route) => req.path.startsWith(route) || req.path === '/',
       );
 
       if (isPublicRoute) {
@@ -41,11 +45,12 @@ export class JwtAuthMiddleware implements NestMiddleware {
       }
 
       const token = authHeader.substring(7);
-      
+
       // Verify and decode token
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
+        secret: process.env.JWT_SECRET,
       });
+      console.log('JWT Payload:', payload);
 
       // Attach user info to request
       req.user = {
@@ -59,16 +64,16 @@ export class JwtAuthMiddleware implements NestMiddleware {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      
+
       // Handle JWT specific errors
       if (error.name === 'JsonWebTokenError') {
         throw new UnauthorizedException('Invalid token');
       }
-      
+
       if (error.name === 'TokenExpiredError') {
         throw new UnauthorizedException('Token expired');
       }
-      
+
       throw new UnauthorizedException('Authentication failed');
     }
   }

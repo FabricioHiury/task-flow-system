@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY apps/api-gateway ./apps/api-gateway
-COPY packages ./packages
+COPY packages/shared ./packages/shared
 
 # Build the application
 WORKDIR /app/apps/api-gateway

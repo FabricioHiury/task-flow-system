@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
+import { ValidationExceptionFilter } from './common/filters/validation-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -33,22 +34,11 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true, // Conversão implícita de tipos
       },
-      errorHttpStatusCode: 422, // Status code para erros de validação
-      exceptionFactory: (errors) => {
-        const result = errors.map((error) => ({
-          property: error.property,
-          value: error.value,
-          constraints: error.constraints,
-        }));
-        return {
-          message: 'Validation failed',
-          statusCode: 422,
-          error: 'Unprocessable Entity',
-          details: result,
-        };
-      },
     }),
   );
+
+  // Global exception filter for validation errors
+  app.useGlobalFilters(new ValidationExceptionFilter());
 
   // Swagger configuration
   const config = new DocumentBuilder()

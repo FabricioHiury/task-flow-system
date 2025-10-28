@@ -4,15 +4,16 @@ import { socketService } from '@/lib/socket';
 
 interface User {
   id: string;
-  name: string;
+  username: string;
   email: string;
+  fullName?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string, fullName?: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -65,9 +66,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (username: string, email: string, password: string, fullName?: string) => {
     try {
-      const response: AuthResponse = await authService.register({ name, email, password });
+      const response: AuthResponse = await authService.register({ username, email, password, fullName });
       
       setToken(response.access_token);
       setUser(response.user);

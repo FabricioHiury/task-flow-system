@@ -33,8 +33,18 @@ export class NotificationsController {
 
   @Get()
   @ApiOperation({ summary: 'Obter todas as notificações do usuário' })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Número da página' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Itens por página' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Número da página',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Itens por página',
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista de notificações retornada com sucesso',
@@ -58,11 +68,8 @@ export class NotificationsController {
     @Query('limit') limit: number = 20,
   ) {
     const userId = req.user.sub;
-    const { notifications, total } = await this.notificationService.getAllNotifications(
-      userId,
-      page,
-      limit,
-    );
+    const { notifications, total } =
+      await this.notificationService.getAllNotifications(userId, page, limit);
 
     return {
       notifications,
@@ -138,12 +145,15 @@ export class NotificationsController {
   })
   async markAsRead(@Param('id') notificationId: string, @Request() req: any) {
     const userId = req.user.sub;
-    const success = await this.notificationService.markAsRead(notificationId, userId);
-    
+    const success = await this.notificationService.markAsRead(
+      notificationId,
+      userId,
+    );
+
     return {
       success,
-      message: success 
-        ? 'Notificação marcada como lida' 
+      message: success
+        ? 'Notificação marcada como lida'
         : 'Notificação não encontrada ou já lida',
     };
   }
@@ -164,7 +174,7 @@ export class NotificationsController {
   async markAllAsRead(@Request() req: any) {
     const userId = req.user.sub;
     const count = await this.notificationService.markAllAsRead(userId);
-    
+
     return {
       count,
       message: `${count} notificações marcadas como lidas`,
@@ -185,14 +195,20 @@ export class NotificationsController {
       },
     },
   })
-  async deleteNotification(@Param('id') notificationId: string, @Request() req: any) {
+  async deleteNotification(
+    @Param('id') notificationId: string,
+    @Request() req: any,
+  ) {
     const userId = req.user.sub;
-    const success = await this.notificationService.deleteNotification(notificationId, userId);
-    
+    const success = await this.notificationService.deleteNotification(
+      notificationId,
+      userId,
+    );
+
     return {
       success,
-      message: success 
-        ? 'Notificação deletada com sucesso' 
+      message: success
+        ? 'Notificação deletada com sucesso'
         : 'Notificação não encontrada',
     };
   }

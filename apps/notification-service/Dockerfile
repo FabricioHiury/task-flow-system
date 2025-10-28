@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY apps/notification-service ./apps/notification-service
-COPY packages ./packages
+COPY packages/shared ./packages/shared
 
 # Build the application
 WORKDIR /app/apps/notification-service

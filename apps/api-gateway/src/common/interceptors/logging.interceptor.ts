@@ -18,7 +18,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest<Request>();
     const response = context.switchToHttp().getResponse<Response>();
     const { method, url, body, query, params, headers } = request;
-    
+
     // Gerar ID único para rastreamento da requisição
     const requestId = uuidv4();
     request['requestId'] = requestId;
@@ -26,7 +26,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
     const userAgent = headers['user-agent'] || '';
     const ip = request.ip || request.connection.remoteAddress;
-    
+
     const startTime = Date.now();
 
     // Log da requisição
@@ -88,7 +88,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const sensitiveFields = ['password', 'token', 'secret', 'authorization'];
     const sanitized = { ...body };
 
-    sensitiveFields.forEach(field => {
+    sensitiveFields.forEach((field) => {
       if (sanitized[field]) {
         sanitized[field] = '***REDACTED***';
       }

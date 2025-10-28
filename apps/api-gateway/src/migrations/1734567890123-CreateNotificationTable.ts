@@ -1,6 +1,8 @@
 import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
 
-export class CreateNotificationTable1734567890123 implements MigrationInterface {
+export class CreateNotificationTable1734567890123
+  implements MigrationInterface
+{
   name = 'CreateNotificationTable1734567890123';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -20,11 +22,11 @@ export class CreateNotificationTable1734567890123 implements MigrationInterface 
             type: 'enum',
             enum: [
               'task_assigned',
-              'task_updated', 
+              'task_updated',
               'task_completed',
               'comment_added',
               'project_invitation',
-              'deadline_reminder'
+              'deadline_reminder',
             ],
           },
           {

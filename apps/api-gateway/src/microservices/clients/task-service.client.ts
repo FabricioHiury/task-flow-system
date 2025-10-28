@@ -42,91 +42,85 @@ export class TaskServiceClient {
 
   createTask(createTaskDto: CreateTaskDto): Observable<any> {
     this.logger.log(`Creating task: ${createTaskDto.title}`);
-    return this.client
-      .send('task.create', createTaskDto)
-      .pipe(
-        timeout(10000),
-        catchError((error) => {
-          this.logger.error(`Failed to create task: ${error.message}`);
-          return throwError(() => error);
-        }),
-      );
+    return this.client.send('task.create', createTaskDto).pipe(
+      timeout(10000),
+      catchError((error) => {
+        this.logger.error(`Failed to create task: ${error.message}`);
+        return throwError(() => error);
+      }),
+    );
   }
 
   updateTask(taskId: string, updateTaskDto: UpdateTaskDto): Observable<any> {
     this.logger.log(`Updating task: ${taskId}`);
-    return this.client
-      .send('task.update', { taskId, ...updateTaskDto })
-      .pipe(
-        timeout(10000),
-        catchError((error) => {
-          this.logger.error(`Failed to update task ${taskId}: ${error.message}`);
-          return throwError(() => error);
-        }),
-      );
+    return this.client.send('task.update', { taskId, ...updateTaskDto }).pipe(
+      timeout(10000),
+      catchError((error) => {
+        this.logger.error(`Failed to update task ${taskId}: ${error.message}`);
+        return throwError(() => error);
+      }),
+    );
   }
 
   deleteTask(taskId: string): Observable<any> {
     this.logger.log(`Deleting task: ${taskId}`);
-    return this.client
-      .send('task.delete', { taskId })
-      .pipe(
-        timeout(10000),
-        catchError((error) => {
-          this.logger.error(`Failed to delete task ${taskId}: ${error.message}`);
-          return throwError(() => error);
-        }),
-      );
+    return this.client.send('task.delete', { taskId }).pipe(
+      timeout(10000),
+      catchError((error) => {
+        this.logger.error(`Failed to delete task ${taskId}: ${error.message}`);
+        return throwError(() => error);
+      }),
+    );
   }
 
   getTask(taskId: string): Observable<any> {
     this.logger.log(`Getting task: ${taskId}`);
-    return this.client
-      .send('task.get', { taskId })
-      .pipe(
-        timeout(10000),
-        catchError((error) => {
-          this.logger.error(`Failed to get task ${taskId}: ${error.message}`);
-          return throwError(() => error);
-        }),
-      );
+    return this.client.send('task.get', { taskId }).pipe(
+      timeout(10000),
+      catchError((error) => {
+        this.logger.error(`Failed to get task ${taskId}: ${error.message}`);
+        return throwError(() => error);
+      }),
+    );
   }
 
   getTasks(filters: TaskFilters = {}): Observable<any> {
     this.logger.log(`Getting tasks with filters: ${JSON.stringify(filters)}`);
-    return this.client
-      .send('task.list', filters)
-      .pipe(
-        timeout(10000),
-        catchError((error) => {
-          this.logger.error(`Failed to get tasks: ${error.message}`);
-          return throwError(() => error);
-        }),
-      );
+    return this.client.send('task.list', filters).pipe(
+      timeout(10000),
+      catchError((error) => {
+        this.logger.error(`Failed to get tasks: ${error.message}`);
+        return throwError(() => error);
+      }),
+    );
   }
 
   assignTask(taskId: string, assigneeId: string): Observable<any> {
     this.logger.log(`Assigning task ${taskId} to user ${assigneeId}`);
-    return this.client
-      .send('task.assign', { taskId, assigneeId })
-      .pipe(
-        timeout(10000),
-        catchError((error) => {
-          this.logger.error(`Failed to assign task ${taskId}: ${error.message}`);
-          return throwError(() => error);
-        }),
-      );
+    return this.client.send('task.assign', { taskId, assigneeId }).pipe(
+      timeout(10000),
+      catchError((error) => {
+        this.logger.error(`Failed to assign task ${taskId}: ${error.message}`);
+        return throwError(() => error);
+      }),
+    );
   }
 
   // Método para adicionar comentário
-  addComment(taskId: string, content: string, authorId: string): Observable<any> {
+  addComment(
+    taskId: string,
+    content: string,
+    authorId: string,
+  ): Observable<any> {
     this.logger.log(`Adding comment to task: ${taskId}`);
     return this.client
       .send('task.comment.create', { taskId, content, authorId })
       .pipe(
         timeout(10000),
         catchError((error) => {
-          this.logger.error(`Failed to add comment to task ${taskId}: ${error.message}`);
+          this.logger.error(
+            `Failed to add comment to task ${taskId}: ${error.message}`,
+          );
           return throwError(() => error);
         }),
       );
@@ -135,14 +129,14 @@ export class TaskServiceClient {
   // Método para obter comentários de uma tarefa
   getComments(taskId: string): Observable<any> {
     this.logger.log(`Getting comments for task: ${taskId}`);
-    return this.client
-      .send('task.comment.list', { taskId })
-      .pipe(
-        timeout(10000),
-        catchError((error) => {
-          this.logger.error(`Failed to get comments for task ${taskId}: ${error.message}`);
-          return throwError(() => error);
-        }),
-      );
+    return this.client.send('task.comment.list', { taskId }).pipe(
+      timeout(10000),
+      catchError((error) => {
+        this.logger.error(
+          `Failed to get comments for task ${taskId}: ${error.message}`,
+        );
+        return throwError(() => error);
+      }),
+    );
   }
 }

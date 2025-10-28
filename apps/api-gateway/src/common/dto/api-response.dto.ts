@@ -36,7 +36,10 @@ export class PaginatedResponseDto<T = any> extends ApiResponseDto<T> {
 }
 
 export class ErrorResponseDto {
-  @ApiProperty({ description: 'Indicates the operation failed', example: false })
+  @ApiProperty({
+    description: 'Indicates the operation failed',
+    example: false,
+  })
   success: boolean;
 
   @ApiProperty({
@@ -53,7 +56,10 @@ export class ErrorResponseDto {
 }
 
 export class UnauthorizedResponseDto {
-  @ApiProperty({ description: 'Indicates the operation failed', example: false })
+  @ApiProperty({
+    description: 'Indicates the operation failed',
+    example: false,
+  })
   success: boolean = false;
 
   @ApiProperty({
@@ -70,7 +76,10 @@ export class UnauthorizedResponseDto {
 }
 
 export class NotFoundResponseDto {
-  @ApiProperty({ description: 'Indicates the operation failed', example: false })
+  @ApiProperty({
+    description: 'Indicates the operation failed',
+    example: false,
+  })
   success: boolean = false;
 
   @ApiProperty({
@@ -87,7 +96,10 @@ export class NotFoundResponseDto {
 }
 
 export class ValidationErrorResponseDto {
-  @ApiProperty({ description: 'Indicates the operation failed', example: false })
+  @ApiProperty({
+    description: 'Indicates the operation failed',
+    example: false,
+  })
   success: boolean = false;
 
   @ApiProperty({
