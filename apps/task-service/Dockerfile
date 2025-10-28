@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY apps/task-service ./apps/task-service
-COPY packages ./packages
+COPY packages/shared ./packages/shared
 
 # Build the application
 WORKDIR /app/apps/task-service

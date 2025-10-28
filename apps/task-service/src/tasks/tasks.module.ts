@@ -13,8 +13,7 @@ import { Comment } from '../comments/comment.entity';
   imports: [
     TypeOrmModule.forFeature([Task, TaskHistory, Comment]),
     JwtModule.register({
-      secret:
-        process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },
     }),
     ClientsModule.register([

@@ -13,7 +13,12 @@ import { NotificationServiceClient } from './clients/notification-service.client
         useFactory: (configService: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
-            urls: [configService.get<string>('RABBITMQ_URL', 'amqp://localhost:5672')],
+            urls: [
+              configService.get<string>(
+                'RABBITMQ_URL',
+                'amqp://localhost:5672',
+              ),
+            ],
             queue: 'task_service_queue',
             queueOptions: {
               durable: true,
@@ -32,7 +37,12 @@ import { NotificationServiceClient } from './clients/notification-service.client
         useFactory: (configService: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
-            urls: [configService.get<string>('RABBITMQ_URL', 'amqp://localhost:5672')],
+            urls: [
+              configService.get<string>(
+                'RABBITMQ_URL',
+                'amqp://localhost:5672',
+              ),
+            ],
             queue: 'notification_service_queue',
             queueOptions: {
               durable: true,

@@ -4,25 +4,26 @@ import {
   IsNotEmpty,
   MaxLength,
   MinLength,
+  IsEmail,
 } from 'class-validator';
 
 export class LoginDto {
   @ApiProperty({
-    description: 'Nome de usuário ou email',
-    example: 'johndoe',
+    description: 'Email do usuário',
+    example: 'john@example.com',
   })
-  @IsString({ message: 'Username deve ser uma string' })
-  @IsNotEmpty({ message: 'Username é obrigatório' })
-  @MaxLength(255, { message: 'Username deve ter no máximo 255 caracteres' })
-  username: string;
+  @IsEmail({}, { message: 'Email deve ter um formato válido' })
+  @IsNotEmpty({ message: 'Email é obrigatório' })
+  @MaxLength(255, { message: 'Email deve ter no máximo 255 caracteres' })
+  email: string;
 
   @ApiProperty({
     description: 'Senha do usuário',
-    example: 'MyStr0ngP@ssw0rd',
+    example: 'minhasenha123',
   })
-  @IsString({ message: 'Password deve ser uma string' })
-  @IsNotEmpty({ message: 'Password é obrigatório' })
-  @MinLength(1, { message: 'Password não pode estar vazio' })
-  @MaxLength(128, { message: 'Password deve ter no máximo 128 caracteres' })
+  @IsString({ message: 'Senha deve ser uma string' })
+  @IsNotEmpty({ message: 'Senha é obrigatória' })
+  @MinLength(8, { message: 'Senha deve ter pelo menos 8 caracteres' })
+  @MaxLength(128, { message: 'Senha deve ter no máximo 128 caracteres' })
   password: string;
 }

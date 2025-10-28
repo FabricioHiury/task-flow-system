@@ -42,7 +42,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-      
+
       if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
         const responseObj = exceptionResponse as any;
         code = responseObj.error || exception.constructor.name;
@@ -56,14 +56,17 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       status = HttpStatus.BAD_REQUEST;
       code = 'DATABASE_ERROR';
       message = 'Database operation failed';
-      details = process.env.NODE_ENV === 'development' ? exception.message : undefined;
+      details =
+        process.env.NODE_ENV === 'development' ? exception.message : undefined;
     } else if (exception instanceof Error) {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       code = 'INTERNAL_SERVER_ERROR';
-      message = process.env.NODE_ENV === 'development' 
-        ? exception.message 
-        : 'Internal server error occurred';
-      details = process.env.NODE_ENV === 'development' ? exception.stack : undefined;
+      message =
+        process.env.NODE_ENV === 'development'
+          ? exception.message
+          : 'Internal server error occurred';
+      details =
+        process.env.NODE_ENV === 'development' ? exception.stack : undefined;
     } else {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       code = 'UNKNOWN_ERROR';
@@ -90,8 +93,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       method: request.method,
       statusCode: status,
       error: {
-        name: exception instanceof Error ? exception.constructor.name : 'Unknown',
-        message: exception instanceof Error ? exception.message : 'Unknown error',
+        name:
+          exception instanceof Error ? exception.constructor.name : 'Unknown',
+        message:
+          exception instanceof Error ? exception.message : 'Unknown error',
         stack: exception instanceof Error ? exception.stack : undefined,
       },
       timestamp,

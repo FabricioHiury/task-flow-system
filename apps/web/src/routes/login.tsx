@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  password: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres'),
 })
 
 type LoginForm = z.infer<typeof loginSchema>

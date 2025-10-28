@@ -109,7 +109,7 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-3">
                   <div className="text-right">
-                    <p className="text-sm font-medium">{user?.name}</p>
+                    <p className="text-sm font-medium">{user?.username}</p>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                   <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
@@ -163,7 +163,7 @@ export function Header() {
                 <User className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium">{user?.name}</p>
+                <p className="font-medium">{user?.username}</p>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
             </div>

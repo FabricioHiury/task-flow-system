@@ -12,16 +12,26 @@ import {
   HttpStatus,
   HttpException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { TaskServiceClient } from '../microservices/clients/task-service.client';
-import type { CreateTaskDto, UpdateTaskDto, TaskFilters } from '../microservices/clients/task-service.client';
+import type {
+  CreateTaskDto,
+  UpdateTaskDto,
+  TaskFilters,
+} from '../microservices/clients/task-service.client';
 import { firstValueFrom } from 'rxjs';
-import { 
-  ApiResponseDto, 
-  UnauthorizedResponseDto, 
-  NotFoundResponseDto, 
-  ValidationErrorResponseDto 
+import {
+  ApiResponseDto,
+  UnauthorizedResponseDto,
+  NotFoundResponseDto,
+  ValidationErrorResponseDto,
 } from '../common/dto';
 
 @ApiTags('Tasks')
@@ -41,7 +51,7 @@ export class TasksController {
         this.taskServiceClient.createTask({
           ...createTaskDto,
           createdBy: req.user.sub,
-        })
+        }),
       );
       return {
         success: true,
@@ -70,8 +80,8 @@ export class TasksController {
       const result = await firstValueFrom(
         this.taskServiceClient.getTasks({
           ...filters,
-          userId: req.user.sub, // Para filtrar tarefas do usuário
-        })
+          userId: req.user.sub,
+        }),
       );
       return {
         success: true,
@@ -99,7 +109,7 @@ export class TasksController {
   async getTask(@Param('id') taskId: string) {
     try {
       const result = await firstValueFrom(
-        this.taskServiceClient.getTask(taskId)
+        this.taskServiceClient.getTask(taskId),
       );
       return {
         success: true,
@@ -123,10 +133,26 @@ export class TasksController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update a task' })
   @ApiParam({ name: 'id', description: 'Task ID' })
-  @ApiResponse({ status: 200, description: 'Task updated successfully', type: ApiResponseDto })
-  @ApiResponse({ status: 400, description: 'Bad request', type: ValidationErrorResponseDto })
-  @ApiResponse({ status: 401, description: 'Unauthorized', type: UnauthorizedResponseDto })
-  @ApiResponse({ status: 404, description: 'Task not found', type: NotFoundResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Task updated successfully',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request',
+    type: ValidationErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: UnauthorizedResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Task not found',
+    type: NotFoundResponseDto,
+  })
   async updateTask(
     @Param('id') taskId: string,
     @Body() updateTaskDto: UpdateTaskDto,
@@ -137,7 +163,7 @@ export class TasksController {
         this.taskServiceClient.updateTask(taskId, {
           ...updateTaskDto,
           updatedBy: req.user.sub,
-        })
+        }),
       );
       return {
         success: true,
@@ -165,7 +191,7 @@ export class TasksController {
   async deleteTask(@Param('id') taskId: string, @Request() req) {
     try {
       const result = await firstValueFrom(
-        this.taskServiceClient.deleteTask(taskId)
+        this.taskServiceClient.deleteTask(taskId),
       );
       return {
         success: true,
@@ -189,14 +215,34 @@ export class TasksController {
   @Patch(':id/assign')
   @ApiOperation({ summary: 'Assign task to user' })
   @ApiParam({ name: 'id', description: 'Task ID' })
-  @ApiResponse({ status: 200, description: 'Task assigned successfully', type: ApiResponseDto })
-  @ApiResponse({ status: 400, description: 'Bad request', type: ValidationErrorResponseDto })
-  @ApiResponse({ status: 401, description: 'Unauthorized', type: UnauthorizedResponseDto })
-  @ApiResponse({ status: 404, description: 'Task not found', type: NotFoundResponseDto })
-  async assignTask(@Param('id') taskId: string, @Body('assigneeId') assigneeId: string, @Request() req) {
+  @ApiResponse({
+    status: 200,
+    description: 'Task assigned successfully',
+    type: ApiResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request',
+    type: ValidationErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: UnauthorizedResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Task not found',
+    type: NotFoundResponseDto,
+  })
+  async assignTask(
+    @Param('id') taskId: string,
+    @Body('assigneeId') assigneeId: string,
+    @Request() req,
+  ) {
     try {
       const result = await firstValueFrom(
-        this.taskServiceClient.assignTask(taskId, assigneeId)
+        this.taskServiceClient.assignTask(taskId, assigneeId),
       );
       return {
         success: true,
@@ -228,7 +274,7 @@ export class TasksController {
   ) {
     try {
       const result = await firstValueFrom(
-        this.taskServiceClient.addComment(taskId, content, req.user.sub)
+        this.taskServiceClient.addComment(taskId, content, req.user.sub),
       );
       return {
         success: true,
@@ -256,7 +302,7 @@ export class TasksController {
   async getComments(@Param('id') taskId: string) {
     try {
       const result = await firstValueFrom(
-        this.taskServiceClient.getComments(taskId)
+        this.taskServiceClient.getComments(taskId),
       );
       return {
         success: true,

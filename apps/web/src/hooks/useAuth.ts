@@ -4,7 +4,6 @@ import { authService, type LoginRequest, type RegisterRequest, type AuthResponse
 import { socketService } from '@/lib/socket'
 
 export function useLogin() {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -19,11 +18,11 @@ export function useLogin() {
       // Conectar ao WebSocket
       socketService.connect(response.access_token)
       
-      // Invalidar queries relacionadas à autenticação
+      // Invalidar queries relacionadas à autenticação para forçar re-render
       queryClient.invalidateQueries({ queryKey: ['auth'] })
       
-      // Navegar para o dashboard
-      navigate({ to: '/dashboard' })
+      // Forçar um reload da página para garantir que o AuthContext seja atualizado
+      window.location.href = '/dashboard'
     },
     onError: (error: any) => {
       console.error('Erro no login:', error)
@@ -33,7 +32,6 @@ export function useLogin() {
 }
 
 export function useRegister() {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -45,14 +43,11 @@ export function useRegister() {
       localStorage.setItem('token', response.access_token)
       localStorage.setItem('user', JSON.stringify(response.user))
       
-      // Conectar ao WebSocket
       socketService.connect(response.access_token)
       
-      // Invalidar queries relacionadas à autenticação
       queryClient.invalidateQueries({ queryKey: ['auth'] })
       
-      // Navegar para o dashboard
-      navigate({ to: '/dashboard' })
+      window.location.href = '/dashboard'
     },
     onError: (error: any) => {
       console.error('Erro no registro:', error)

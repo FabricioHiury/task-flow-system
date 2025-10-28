@@ -1,16 +1,25 @@
-import { 
-  Controller, 
-  Post, 
-  Body, 
-  UseGuards, 
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
   Request,
   HttpCode,
   HttpStatus,
+  Headers,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import { RegisterDto, LoginDto, RefreshTokenDto } from './dto';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { LoginDto, RefreshTokenDto } from './dto';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -19,8 +28,8 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'User successfully registered',
     schema: {
       type: 'object',
@@ -45,8 +54,8 @@ export class AuthController {
       },
     },
   })
-  @ApiResponse({ 
-    status: 400, 
+  @ApiResponse({
+    status: 400,
     description: 'Bad request - Validation failed',
     schema: {
       type: 'object',
@@ -63,7 +72,7 @@ export class AuthController {
       },
     },
   })
-  async register(@Body() registerDto: RegisterDto) {
+  async register(@Body() registerDto: CreateUserDto) {
     return this.authService.register(registerDto);
   }
 
@@ -71,8 +80,8 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login do usuário' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Login realizado com sucesso',
     schema: {
       type: 'object',
@@ -96,8 +105,8 @@ export class AuthController {
       },
     },
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Credenciais inválidas',
     schema: {
       type: 'object',
@@ -120,8 +129,8 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Token successfully refreshed',
     schema: {
       type: 'object',
@@ -137,8 +146,8 @@ export class AuthController {
       },
     },
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Invalid refresh token',
     schema: {
       type: 'object',
@@ -156,5 +165,91 @@ export class AuthController {
   })
   async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refreshToken(refreshTokenDto.refreshToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout do usuário' })
+  @ApiResponse({
+    status: 200,
+    description: 'Logout realizado com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Logout realizado com sucesso' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token inválido ou expirado',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        error: {
+          type: 'object',
+          properties: {
+            code: { type: 'string', example: 'UNAUTHORIZED' },
+            message: { type: 'string', example: 'Token inválido' },
+          },
+        },
+      },
+    },
+  })
+  async logout(
+    @Headers('authorization') authHeader: string,
+    @Body() body?: { refreshToken?: string },
+  ) {
+    // Extrair o access token do header
+    const accessToken = authHeader?.replace('Bearer ', '');
+
+    if (!accessToken) {
+      throw new UnauthorizedException('Token de acesso requerido');
+    }
+
+    await this.authService.logout(accessToken, body?.refreshToken);
+
+    return {
+      success: true,
+      message: 'Logout realizado com sucesso',
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout-all')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout de todos os dispositivos' })
+  @ApiResponse({
+    status: 200,
+    description: 'Logout realizado em todos os dispositivos',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: {
+          type: 'string',
+          example: 'Logout realizado em todos os dispositivos',
+        },
+      },
+    },
+  })
+  async logoutAll(@Request() req: any) {
+    const userId = req.user?.sub;
+
+    if (!userId) {
+      throw new UnauthorizedException('Usuário não identificado');
+    }
+
+    await this.authService.logoutAllDevices(userId);
+
+    return {
+      success: true,
+      message: 'Logout realizado em todos os dispositivos',
+    };
   }
 }

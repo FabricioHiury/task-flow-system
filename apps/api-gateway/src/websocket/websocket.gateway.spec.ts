@@ -4,7 +4,6 @@ import { NotificationService } from './services/notification.service';
 import { JwtService } from '@nestjs/jwt';
 import { Socket } from 'socket.io';
 import { JoinRoomDto } from './dto/join-room.dto';
-import { LeaveRoomDto } from './dto/leave-room.dto';
 import { SendNotificationDto } from './dto/send-notification.dto';
 import { TaskUpdateDto } from './dto/task-update.dto';
 import { CommentUpdateDto } from './dto/comment-update.dto';

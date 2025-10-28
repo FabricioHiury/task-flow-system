@@ -10,8 +10,7 @@ import { Comment } from './comment.entity';
   imports: [
     TypeOrmModule.forFeature([Comment]),
     JwtModule.register({
-      secret:
-        process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },
     }),
     ClientsModule.register([
