@@ -1,31 +1,15 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsUUID, IsObject } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { NotificationType, EntityType } from './enums';
+import { NotificationType, EntityType } from '../entities/notification.entity';
 
 export class CreateNotificationDto {
   @ApiProperty({
     description: 'Tipo da notificação',
     enum: NotificationType,
-    example: NotificationType.TASK_ASSIGNED,
+    example: NotificationType.TASK_CREATED,
   })
   @IsEnum(NotificationType)
   type: NotificationType;
-
-  @ApiProperty({
-    description: 'Título da notificação',
-    example: 'Nova tarefa atribuída',
-  })
-  @IsString()
-  @IsNotEmpty()
-  title: string;
-
-  @ApiProperty({
-    description: 'Mensagem da notificação',
-    example: 'Você foi atribuído à tarefa: Implementar autenticação',
-  })
-  @IsString()
-  @IsNotEmpty()
-  message: string;
 
   @ApiProperty({
     description: 'ID do usuário que receberá a notificação',
@@ -60,9 +44,14 @@ export class CreateNotificationDto {
   entityType?: EntityType;
 
   @ApiPropertyOptional({
-    description: 'Metadados adicionais da notificação',
-    example: { priority: 'high', dueDate: '2024-12-31' },
+    description: 'Metadados da notificação (incluindo título e mensagem)',
+    example: { 
+      title: 'Nova tarefa criada',
+      message: 'A tarefa "Implementar autenticação" foi criada.',
+      priority: 'high' 
+    },
   })
   @IsOptional()
+  @IsObject()
   metadata?: Record<string, any>;
 }

@@ -30,9 +30,9 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672'],
-      queue: 'task_queue',
+      queue: 'task_service_queue',
       queueOptions: {
-        durable: false,
+        durable: true,
       },
     },
   });
@@ -42,8 +42,8 @@ async function bootstrap() {
   const port = process.env.TASK_SERVICE_PORT || 3001;
   await app.listen(port);
 
-  console.log(`🚀 Task Service running on http://localhost:${port}`);
-  console.log(`📡 RabbitMQ microservice connected`);
+  console.log(`Task Service running on http://localhost:${port}`);
+  console.log(`RabbitMQ microservice connected`);
 }
 
 bootstrap();

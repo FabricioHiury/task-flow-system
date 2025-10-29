@@ -17,7 +17,7 @@ export class CommentsService {
   async create(
     createCommentDto: CreateCommentDto,
     taskId: number,
-    userId: number,
+    userId: string,
   ): Promise<Comment> {
     const comment = this.commentRepository.create({
       ...createCommentDto,
@@ -28,12 +28,13 @@ export class CommentsService {
     const savedComment = await this.commentRepository.save(comment);
 
     // Emit event for comment creation
-    this.rabbitClient.emit('comment.created', {
-      commentId: savedComment.id,
-      taskId: savedComment.taskId,
+    this.rabbitClient.emit('notification.comment.created', {
+      id: savedComment.id.toString(),
+      taskId: savedComment.taskId.toString(),
       content: savedComment.content,
       createdBy: savedComment.createdBy,
       createdAt: savedComment.createdAt,
+      taskOwnerId: savedComment.createdBy, // Assuming the comment creator should be notified
     });
 
     return savedComment;
@@ -59,7 +60,7 @@ export class CommentsService {
     return comment;
   }
 
-  async remove(id: number, userId: number): Promise<void> {
+  async remove(id: number, userId: string): Promise<void> {
     const comment = await this.findOne(id);
 
     // Check if user is the owner of the comment
@@ -70,9 +71,9 @@ export class CommentsService {
     await this.commentRepository.remove(comment);
 
     // Emit event for comment deletion
-    this.rabbitClient.emit('comment.deleted', {
-      commentId: id,
-      taskId: comment.taskId,
+    this.rabbitClient.emit('notification.comment.deleted', {
+      commentId: id.toString(),
+      taskId: comment.taskId.toString(),
       deletedBy: userId,
       deletedAt: new Date(),
     });

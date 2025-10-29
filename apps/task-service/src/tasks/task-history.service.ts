@@ -14,15 +14,19 @@ export class TaskHistoryService {
   async createHistoryEntry(
     taskId: number,
     changeType: ChangeType,
-    changedBy: number,
+    changedBy: string,
     description?: string,
     previousValues?: Record<string, any>,
     newValues?: Record<string, any>,
   ): Promise<TaskHistory> {
+    if (!changedBy || changedBy.trim() === '') {
+      throw new Error('changedBy field is required and cannot be empty');
+    }
+
     const historyEntry = this.taskHistoryRepository.create({
       taskId,
       changeType,
-      changedBy,
+      changedBy: changedBy.trim(),
       description,
       previousValues,
       newValues,
@@ -38,7 +42,7 @@ export class TaskHistoryService {
     });
   }
 
-  async logTaskCreation(task: Task, createdBy: number): Promise<void> {
+  async logTaskCreation(task: Task, createdBy: string): Promise<void> {
     await this.createHistoryEntry(
       task.id,
       ChangeType.CREATED,
@@ -60,7 +64,7 @@ export class TaskHistoryService {
     taskId: number,
     previousTask: Partial<Task>,
     updatedTask: Partial<Task>,
-    updatedBy: number,
+    updatedBy: string,
   ): Promise<void> {
     const changes: string[] = [];
     const previousValues: Record<string, any> = {};
@@ -183,7 +187,7 @@ export class TaskHistoryService {
     }
   }
 
-  async logTaskDeletion(task: Task, deletedBy: number): Promise<void> {
+  async logTaskDeletion(task: Task, deletedBy: string): Promise<void> {
     await this.createHistoryEntry(
       task.id,
       ChangeType.DELETED,

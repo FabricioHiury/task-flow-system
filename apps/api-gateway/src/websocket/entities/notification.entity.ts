@@ -7,6 +7,21 @@ import {
   Index,
 } from 'typeorm';
 
+export enum NotificationType {
+  TASK_CREATED = 'task_created',
+  TASK_UPDATED = 'task_updated',
+  TASK_DELETED = 'task_deleted',
+  COMMENT_CREATED = 'comment_created',
+  COMMENT_DELETED = 'comment_deleted',
+  SYSTEM = 'system',
+}
+
+export enum EntityType {
+  TASK = 'task',
+  COMMENT = 'comment',
+  USER = 'user',
+}
+
 @Entity('notifications')
 @Index(['recipientId', 'isRead'])
 @Index(['recipientId', 'createdAt'])
@@ -16,15 +31,13 @@ export class Notification {
 
   @Column({
     type: 'enum',
-    enum: ['task_assigned', 'task_updated', 'task_completed', 'comment_added', 'project_invitation', 'deadline_reminder'],
+    enum: NotificationType,
+    default: NotificationType.SYSTEM,
   })
-  type: string;
+  type: NotificationType;
 
-  @Column({ length: 255 })
-  title: string;
-
-  @Column({ type: 'text' })
-  message: string;
+  @Column({ type: 'jsonb', nullable: true })
+  metadata?: Record<string, any>;
 
   @Column({ name: 'recipient_id' })
   @Index()
@@ -39,13 +52,10 @@ export class Notification {
   @Column({ 
     name: 'entity_type',
     type: 'enum',
-    enum: ['task', 'project', 'comment'],
+    enum: EntityType,
     nullable: true 
   })
-  entityType?: string;
-
-  @Column({ type: 'jsonb', nullable: true })
-  metadata?: Record<string, any>;
+  entityType?: EntityType;
 
   @Column({ name: 'is_read', default: false })
   @Index()
@@ -54,9 +64,9 @@ export class Notification {
   @Column({ name: 'read_at', type: 'timestamp', nullable: true })
   readAt?: Date;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn()
   updatedAt: Date;
 }

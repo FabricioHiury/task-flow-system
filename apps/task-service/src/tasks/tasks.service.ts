@@ -21,7 +21,7 @@ export class TasksService {
     private taskHistoryService: TaskHistoryService,
   ) {}
 
-  async create(createTaskDto: CreateTaskDto, userId: number): Promise<Task> {
+  async create(createTaskDto: CreateTaskDto, userId: string): Promise<Task> {
     const task = this.taskRepository.create({
       ...createTaskDto,
       createdBy: userId,
@@ -33,9 +33,10 @@ export class TasksService {
     await this.taskHistoryService.logTaskCreation(savedTask, userId);
 
     // Emit event for task creation
-    this.rabbitClient.emit('task.created', {
-      taskId: savedTask.id,
+    this.rabbitClient.emit('notification.task.created', {
+      id: savedTask.id.toString(),
       title: savedTask.title,
+      priority: savedTask.priority,
       assignedTo: savedTask.assignedTo,
       createdBy: savedTask.createdBy,
       createdAt: savedTask.createdAt,
@@ -46,7 +47,7 @@ export class TasksService {
 
   async findAll(
     paginationDto: PaginationDto,
-    userId?: number,
+    userId?: string,
   ): Promise<{ tasks: Task[]; total: number }> {
     const { page = 1, size = 10 } = paginationDto;
     const skip = (page - 1) * size;
@@ -71,7 +72,7 @@ export class TasksService {
     return { tasks, total };
   }
 
-  async findOne(id: number, userId?: number): Promise<Task> {
+  async findOne(id: number, userId?: string): Promise<Task> {
     const queryBuilder = this.taskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.comments', 'comments')
@@ -96,7 +97,7 @@ export class TasksService {
   async update(
     id: number,
     updateTaskDto: UpdateTaskDto,
-    userId: number,
+    userId: string,
   ): Promise<Task> {
     const task = await this.findOne(id, userId);
 
@@ -116,37 +117,44 @@ export class TasksService {
     );
 
     // Emit event for task update
-    this.rabbitClient.emit('task.updated', {
-      taskId: updatedTask.id,
+    this.rabbitClient.emit('notification.task.updated', {
+      id: updatedTask.id.toString(),
       title: updatedTask.title,
       previousStatus,
       newStatus: updatedTask.status,
       assignedTo: updatedTask.assignedTo,
+      createdBy: updatedTask.createdBy,
       updatedBy: userId,
       updatedAt: updatedTask.updatedAt,
+      changes: { status: { from: previousStatus, to: updatedTask.status } },
     });
 
     return updatedTask;
   }
 
-  async remove(id: number, userId: number): Promise<void> {
+  async remove(id: number, userId: string): Promise<void> {
+    // Validate userId is provided
+    if (!userId || userId.trim() === '') {
+      throw new Error('User ID is required for task deletion');
+    }
+
     const task = await this.findOne(id, userId);
 
     // Log task deletion in history before removing
-    await this.taskHistoryService.logTaskDeletion(task, userId);
+    await this.taskHistoryService.logTaskDeletion(task, userId.trim());
 
     await this.taskRepository.remove(task);
 
     // Emit event for task deletion
-    this.rabbitClient.emit('task.deleted', {
-      taskId: id,
+    this.rabbitClient.emit('notification.task.deleted', {
+      id: id.toString(),
       title: task.title,
-      deletedBy: userId,
+      deletedBy: userId.trim(),
       deletedAt: new Date(),
     });
   }
 
-  async findByStatus(status: TaskStatus, userId?: number): Promise<Task[]> {
+  async findByStatus(status: TaskStatus, userId?: string): Promise<Task[]> {
     const queryBuilder = this.taskRepository
       .createQueryBuilder('task')
       .where('task.status = :status', { status });
@@ -161,7 +169,7 @@ export class TasksService {
     return queryBuilder.getMany();
   }
 
-  async getTaskHistory(taskId: number, userId?: number): Promise<any[]> {
+  async getTaskHistory(taskId: number, userId?: string): Promise<any[]> {
     // Verify user has access to the task
     if (userId) {
       await this.findOne(taskId, userId);
@@ -170,7 +178,37 @@ export class TasksService {
     return this.taskHistoryService.getTaskHistory(taskId);
   }
 
-  async findByAssignee(assigneeId: number): Promise<Task[]> {
+  async assignTask(taskId: number, assigneeId: string, userId: string): Promise<Task> {
+    const task = await this.findOne(taskId, userId);
+    
+    // Store previous assignee for history
+    const previousAssignee = task.assignedTo;
+    task.assignedTo = assigneeId;
+
+    const updatedTask = await this.taskRepository.save(task);
+
+    // Log task assignment in history
+    await this.taskHistoryService.logTaskUpdate(
+      taskId,
+      { ...task, assignedTo: previousAssignee },
+      updatedTask,
+      userId,
+    );
+
+    // Emit event for task assignment
+    this.rabbitClient.emit('notification.task.updated', {
+      taskId: updatedTask.id.toString(),
+      title: updatedTask.title,
+      previousAssignee,
+      newAssignee: updatedTask.assignedTo,
+      assignedBy: userId,
+      updatedAt: updatedTask.updatedAt,
+    });
+
+    return updatedTask;
+  }
+
+  async findByAssignee(assigneeId: string): Promise<Task[]> {
     return this.taskRepository.find({
       where: { assignedTo: assigneeId },
       relations: ['comments'],

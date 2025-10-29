@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Plus, Search, Trash2, Edit, CheckSquare, Clock, Calendar } from 'lucide-react'
 import { TaskListSkeleton } from '@/components/skeletons/task-skeleton'
+import { EditTaskModal } from '@/components/edit-task-modal'
+import type { Task } from '@/lib/api'
 
 const createTaskSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório'),
@@ -31,6 +33,8 @@ function TasksPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
 
   const { data: tasks, isLoading: tasksLoading } = useTasks()
   const createTaskMutation = useCreateTask()
@@ -105,7 +109,12 @@ function TasksPage() {
   }) || []
 
   const onSubmit = (data: CreateTaskForm) => {
-    createTaskMutation.mutate(data, {
+    const taskData = {
+      ...data,
+      status: data.status || 'TODO',
+      priority: data.priority || 'MEDIUM'
+    }
+    createTaskMutation.mutate(taskData, {
       onSuccess: () => {
         setShowCreateForm(false)
         reset()
@@ -117,6 +126,11 @@ function TasksPage() {
     if (confirm('Tem certeza que deseja excluir esta tarefa?')) {
       deleteTaskMutation.mutate(id)
     }
+  }
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task)
+    setShowEditModal(true)
   }
 
   const getStatusText = (status: string) => {
@@ -331,7 +345,11 @@ function TasksPage() {
                   </div>
                   
                   <div className="flex gap-2 ml-4">
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleEditTask(task)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
@@ -369,6 +387,12 @@ function TasksPage() {
           </CardContent>
         </Card>
       )}
+
+      <EditTaskModal
+        task={editingTask}
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+      />
     </div>
   )
 }

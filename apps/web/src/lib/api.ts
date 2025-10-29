@@ -110,7 +110,7 @@ export interface UpdateTaskRequest extends Partial<CreateTaskRequest> {}
 export const taskService = {
   getTasks: async (): Promise<Task[]> => {
     const response = await api.get('/tasks');
-    return response.data;
+    return response.data.data.tasks;
   },
 
   getTask: async (id: string): Promise<Task> => {
@@ -120,12 +120,12 @@ export const taskService = {
 
   createTask: async (data: CreateTaskRequest): Promise<Task> => {
     const response = await api.post('/tasks', data);
-    return response.data;
+    return response.data.data;
   },
 
   updateTask: async (id: string, data: UpdateTaskRequest): Promise<Task> => {
     const response = await api.patch(`/tasks/${id}`, data);
-    return response.data;
+    return response.data.data;
   },
 
   deleteTask: async (id: string): Promise<void> => {
@@ -188,17 +188,17 @@ export interface Notification {
 export const notificationService = {
   getNotifications: async (): Promise<Notification[]> => {
     const response = await api.get('/notifications');
-    return response.data;
+    return response.data.data.notifications;
   },
 
   getUnreadNotifications: async (): Promise<Notification[]> => {
     const response = await api.get('/notifications/unread');
-    return response.data;
+    return response.data.data.notifications;
   },
 
   getUnreadCount: async (): Promise<number> => {
     const response = await api.get('/notifications/unread/count');
-    return response.data.count;
+    return response.data.data?.count || response.data.count || 0;
   },
 
   markAsRead: async (id: string): Promise<void> => {

@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { NotificationType, EntityType } from '../entities/notification.entity';
 
 export class NotificationResponseDto {
   @ApiProperty({
@@ -9,21 +10,10 @@ export class NotificationResponseDto {
 
   @ApiProperty({
     description: 'Tipo da notificação',
-    example: 'task_assigned',
+    enum: NotificationType,
+    example: NotificationType.TASK_CREATED,
   })
-  type: string;
-
-  @ApiProperty({
-    description: 'Título da notificação',
-    example: 'Nova tarefa atribuída',
-  })
-  title: string;
-
-  @ApiProperty({
-    description: 'Mensagem da notificação',
-    example: 'Você foi atribuído à tarefa: Implementar autenticação',
-  })
-  message: string;
+  type: NotificationType;
 
   @ApiProperty({
     description: 'ID do usuário que receberá a notificação',
@@ -45,13 +35,18 @@ export class NotificationResponseDto {
 
   @ApiPropertyOptional({
     description: 'Tipo da entidade relacionada',
-    example: 'task',
+    enum: EntityType,
+    example: EntityType.TASK,
   })
-  entityType?: string;
+  entityType?: EntityType;
 
   @ApiPropertyOptional({
-    description: 'Metadados adicionais',
-    example: { priority: 'high' },
+    description: 'Metadados da notificação (incluindo título e mensagem)',
+    example: { 
+      title: 'Nova tarefa criada',
+      message: 'A tarefa "Implementar autenticação" foi criada.',
+      priority: 'high' 
+    },
   })
   metadata?: Record<string, any>;
 

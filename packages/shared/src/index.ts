@@ -1,3 +1,2 @@
-export * from './types';
-export * from './enums';
-export * from './dtos';
+export * from './enums/index.js';
+export * from './dtos/index.js';

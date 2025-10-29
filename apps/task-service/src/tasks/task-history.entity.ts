@@ -6,7 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Task } from './task.entity';
+import { Task } from '../tasks/task.entity';
 
 export enum ChangeType {
   CREATED = 'created',
@@ -33,8 +33,8 @@ export class TaskHistory {
   })
   changeType: ChangeType;
 
-  @Column({ name: 'changed_by' })
-  changedBy: number;
+  @Column({ name: 'changed_by', nullable: false })
+  changedBy: string;
 
   @Column('text', { nullable: true })
   description: string;
