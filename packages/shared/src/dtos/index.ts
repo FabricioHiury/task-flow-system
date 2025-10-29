@@ -1,5 +1,5 @@
 import { IsEmail, IsString, MinLength, IsEnum, IsOptional, IsDateString, IsArray, IsUUID } from 'class-validator';
-import { TaskPriority, TaskStatus } from '../enums';
+import { TaskPriority, TaskStatus } from '../enums/index';
 
 export class RegisterDto {
   @IsEmail()

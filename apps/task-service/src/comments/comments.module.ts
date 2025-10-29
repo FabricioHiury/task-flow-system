@@ -21,7 +21,7 @@ import { Comment } from './comment.entity';
           urls: [
             process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672',
           ],
-          queue: 'task_queue',
+          queue: 'notifications_queue',
           queueOptions: {
             durable: false,
           },

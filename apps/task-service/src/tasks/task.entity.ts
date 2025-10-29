@@ -4,9 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
   OneToMany,
-  JoinColumn,
 } from 'typeorm';
 import { TaskStatus, TaskPriority } from '@task-flow/shared';
 import { Comment } from '../comments/comment.entity';
@@ -37,10 +35,10 @@ export class Task {
   priority: TaskPriority;
 
   @Column({ name: 'assigned_to', nullable: true })
-  assignedTo: number;
+  assignedTo: string;
 
   @Column({ name: 'created_by' })
-  createdBy: number;
+  createdBy: string;
 
   @Column({ type: 'timestamp', nullable: true })
   deadline: Date;

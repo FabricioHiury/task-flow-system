@@ -47,10 +47,12 @@ export class TasksController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   async createTask(@Body() createTaskDto: CreateTaskDto, @Request() req) {
     try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
       const result = await firstValueFrom(
         this.taskServiceClient.createTask({
           ...createTaskDto,
           createdBy: req.user.sub,
+          token,
         }),
       );
       return {
@@ -77,10 +79,14 @@ export class TasksController {
   @ApiResponse({ status: 200, description: 'Tasks retrieved successfully' })
   async getTasks(@Query() filters: TaskFilters, @Request() req) {
     try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      console.log('Token extracted:', token ? 'Token present' : 'No token');
+      console.log('Authorization header:', req.headers.authorization);
       const result = await firstValueFrom(
         this.taskServiceClient.getTasks({
           ...filters,
           userId: req.user.sub,
+          token,
         }),
       );
       return {
@@ -106,10 +112,11 @@ export class TasksController {
   @ApiOperation({ summary: 'Get task by ID' })
   @ApiResponse({ status: 200, description: 'Task retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Task not found' })
-  async getTask(@Param('id') taskId: string) {
+  async getTask(@Param('id') taskId: string, @Request() req) {
     try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
       const result = await firstValueFrom(
-        this.taskServiceClient.getTask(taskId),
+        this.taskServiceClient.getTask(taskId, token),
       );
       return {
         success: true,
@@ -159,10 +166,12 @@ export class TasksController {
     @Request() req,
   ) {
     try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
       const result = await firstValueFrom(
         this.taskServiceClient.updateTask(taskId, {
           ...updateTaskDto,
           updatedBy: req.user.sub,
+          token,
         }),
       );
       return {
@@ -191,7 +200,7 @@ export class TasksController {
   async deleteTask(@Param('id') taskId: string, @Request() req) {
     try {
       const result = await firstValueFrom(
-        this.taskServiceClient.deleteTask(taskId),
+        this.taskServiceClient.deleteTask(taskId, req.user.sub),
       );
       return {
         success: true,
@@ -241,8 +250,9 @@ export class TasksController {
     @Request() req,
   ) {
     try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
       const result = await firstValueFrom(
-        this.taskServiceClient.assignTask(taskId, assigneeId),
+        this.taskServiceClient.assignTask(taskId, assigneeId, token),
       );
       return {
         success: true,
@@ -273,8 +283,9 @@ export class TasksController {
     @Request() req,
   ) {
     try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
       const result = await firstValueFrom(
-        this.taskServiceClient.addComment(taskId, content, req.user.sub),
+        this.taskServiceClient.addComment(taskId, content, req.user.sub, token),
       );
       return {
         success: true,
@@ -299,10 +310,11 @@ export class TasksController {
   @ApiOperation({ summary: 'Get task comments' })
   @ApiResponse({ status: 200, description: 'Comments retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Task not found' })
-  async getComments(@Param('id') taskId: string) {
+  async getComments(@Param('id') taskId: string, @Request() req) {
     try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
       const result = await firstValueFrom(
-        this.taskServiceClient.getComments(taskId),
+        this.taskServiceClient.getComments(taskId, token),
       );
       return {
         success: true,

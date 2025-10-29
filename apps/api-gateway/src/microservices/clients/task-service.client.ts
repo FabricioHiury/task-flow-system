@@ -11,6 +11,7 @@ export interface CreateTaskDto {
   dueDate?: Date;
   tags?: string[];
   createdBy?: string;
+  token?: string;
 }
 
 export interface UpdateTaskDto {
@@ -22,6 +23,7 @@ export interface UpdateTaskDto {
   dueDate?: Date;
   tags?: string[];
   updatedBy?: string;
+  token?: string;
 }
 
 export interface TaskFilters {
@@ -32,6 +34,7 @@ export interface TaskFilters {
   page?: number;
   limit?: number;
   userId?: string;
+  token?: string;
 }
 
 @Injectable()
@@ -62,9 +65,9 @@ export class TaskServiceClient {
     );
   }
 
-  deleteTask(taskId: string): Observable<any> {
-    this.logger.log(`Deleting task: ${taskId}`);
-    return this.client.send('task.delete', { taskId }).pipe(
+  deleteTask(taskId: string, userId: string): Observable<any> {
+    this.logger.log(`Deleting task: ${taskId} by user: ${userId}`);
+    return this.client.send('task.delete', { taskId, userId }).pipe(
       timeout(10000),
       catchError((error) => {
         this.logger.error(`Failed to delete task ${taskId}: ${error.message}`);
@@ -73,9 +76,9 @@ export class TaskServiceClient {
     );
   }
 
-  getTask(taskId: string): Observable<any> {
+  getTask(taskId: string, token?: string): Observable<any> {
     this.logger.log(`Getting task: ${taskId}`);
-    return this.client.send('task.get', { taskId }).pipe(
+    return this.client.send('task.get', { taskId, token }).pipe(
       timeout(10000),
       catchError((error) => {
         this.logger.error(`Failed to get task ${taskId}: ${error.message}`);
@@ -95,9 +98,9 @@ export class TaskServiceClient {
     );
   }
 
-  assignTask(taskId: string, assigneeId: string): Observable<any> {
+  assignTask(taskId: string, assigneeId: string, token?: string): Observable<any> {
     this.logger.log(`Assigning task ${taskId} to user ${assigneeId}`);
-    return this.client.send('task.assign', { taskId, assigneeId }).pipe(
+    return this.client.send('task.assign', { taskId, assigneeId, token }).pipe(
       timeout(10000),
       catchError((error) => {
         this.logger.error(`Failed to assign task ${taskId}: ${error.message}`);
@@ -111,10 +114,11 @@ export class TaskServiceClient {
     taskId: string,
     content: string,
     authorId: string,
+    token?: string,
   ): Observable<any> {
     this.logger.log(`Adding comment to task: ${taskId}`);
     return this.client
-      .send('task.comment.create', { taskId, content, authorId })
+      .send('task.comment.create', { taskId, content, authorId, token })
       .pipe(
         timeout(10000),
         catchError((error) => {
@@ -127,9 +131,9 @@ export class TaskServiceClient {
   }
 
   // Método para obter comentários de uma tarefa
-  getComments(taskId: string): Observable<any> {
+  getComments(taskId: string, token?: string): Observable<any> {
     this.logger.log(`Getting comments for task: ${taskId}`);
-    return this.client.send('task.comment.list', { taskId }).pipe(
+    return this.client.send('task.comment.list', { taskId, token }).pipe(
       timeout(10000),
       catchError((error) => {
         this.logger.error(

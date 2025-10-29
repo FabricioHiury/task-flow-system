@@ -1,10 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 export enum NotificationType {
   TASK_CREATED = 'task_created',
@@ -12,11 +6,13 @@ export enum NotificationType {
   TASK_DELETED = 'task_deleted',
   COMMENT_CREATED = 'comment_created',
   COMMENT_DELETED = 'comment_deleted',
+  SYSTEM = 'system',
 }
 
-export enum NotificationStatus {
-  UNREAD = 'unread',
-  READ = 'read',
+export enum EntityType {
+  TASK = 'task',
+  COMMENT = 'comment',
+  USER = 'user',
 }
 
 @Entity('notifications')
@@ -24,33 +20,38 @@ export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  title: string;
-
-  @Column({ type: 'text' })
-  message: string;
-
   @Column({
     type: 'enum',
     enum: NotificationType,
+    default: NotificationType.SYSTEM,
   })
   type: NotificationType;
 
-  @Column({
-    type: 'enum',
-    enum: NotificationStatus,
-    default: NotificationStatus.UNREAD,
-  })
-  status: NotificationStatus;
+  @Column('jsonb', { nullable: true })
+  metadata?: Record<string, any>;
 
-  @Column({ type: 'uuid' })
+  @Column({ name: 'recipient_id' })
   userId: string;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ nullable: true, name: 'sender_id' })
+  senderId?: string;
+
+  @Column({ nullable: true, name: 'entity_id' })
   relatedEntityId?: string;
 
-  @Column({ type: 'jsonb', nullable: true })
-  metadata?: Record<string, any>;
+  @Column({
+    type: 'enum',
+    enum: EntityType,
+    nullable: true,
+    name: 'entity_type',
+  })
+  entityType?: EntityType;
+
+  @Column({ name: 'is_read', default: false })
+  isRead: boolean;
+
+  @Column({ nullable: true, name: 'read_at' })
+  readAt?: Date;
 
   @CreateDateColumn()
   createdAt: Date;

@@ -18,7 +18,7 @@ export class Comment {
   content: string;
 
   @Column({ name: 'created_by' })
-  createdBy: number;
+  createdBy: string;
 
   @Column({ name: 'task_id' })
   taskId: number;

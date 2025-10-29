@@ -1,16 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification } from '../entities/notification.entity';
+import { Notification, NotificationType, EntityType } from '../entities/notification.entity';
 
 export interface NotificationPayload {
-  type: 'task_assigned' | 'task_updated' | 'task_completed' | 'comment_added' | 'project_invitation' | 'deadline_reminder';
-  title: string;
-  message: string;
+  type: NotificationType;
   recipientId: string;
   senderId?: string;
   entityId?: string; // task ID, project ID, etc.
-  entityType?: 'task' | 'project' | 'comment';
+  entityType?: EntityType;
   metadata?: Record<string, any>;
 }
 
@@ -27,8 +25,6 @@ export class NotificationService {
     try {
       const notification = this.notificationRepository.create({
         type: payload.type,
-        title: payload.title,
-        message: payload.message,
         recipientId: payload.recipientId,
         senderId: payload.senderId,
         entityId: payload.entityId,
@@ -172,13 +168,16 @@ export class NotificationService {
     assignerId: string
   ): Promise<Notification> {
     return this.createAndSendNotification({
-      type: 'task_assigned',
-      title: 'Nova tarefa atribuída',
-      message: `Você foi atribuído à tarefa: ${taskTitle}`,
+      type: NotificationType.TASK_CREATED,
       recipientId: assigneeId,
       senderId: assignerId,
       entityId: taskId,
-      entityType: 'task',
+      entityType: EntityType.TASK,
+      metadata: {
+        title: 'Nova tarefa atribuída',
+        message: `Você foi atribuído à tarefa: ${taskTitle}`,
+        taskTitle
+      },
     });
   }
 
@@ -190,14 +189,17 @@ export class NotificationService {
     changes: string[]
   ): Promise<Notification> {
     return this.createAndSendNotification({
-      type: 'task_updated',
-      title: 'Tarefa atualizada',
-      message: `A tarefa "${taskTitle}" foi atualizada: ${changes.join(', ')}`,
+      type: NotificationType.TASK_UPDATED,
       recipientId,
       senderId: updaterId,
       entityId: taskId,
-      entityType: 'task',
-      metadata: { changes },
+      entityType: EntityType.TASK,
+      metadata: { 
+        title: 'Tarefa atualizada',
+        message: `A tarefa "${taskTitle}" foi atualizada: ${changes.join(', ')}`,
+        taskTitle,
+        changes 
+      },
     });
   }
 
@@ -209,14 +211,17 @@ export class NotificationService {
     commentPreview: string
   ): Promise<Notification> {
     return this.createAndSendNotification({
-      type: 'comment_added',
-      title: 'Novo comentário',
-      message: `Novo comentário na tarefa "${taskTitle}": ${commentPreview}`,
+      type: NotificationType.COMMENT_CREATED,
       recipientId,
       senderId: commenterId,
       entityId: taskId,
-      entityType: 'task',
-      metadata: { commentPreview },
+      entityType: EntityType.TASK,
+      metadata: { 
+        title: 'Novo comentário',
+        message: `Novo comentário na tarefa "${taskTitle}": ${commentPreview}`,
+        taskTitle,
+        commentPreview 
+      },
     });
   }
 
@@ -229,13 +234,17 @@ export class NotificationService {
     const daysUntilDue = Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     
     return this.createAndSendNotification({
-      type: 'deadline_reminder',
-      title: 'Lembrete de prazo',
-      message: `A tarefa "${taskTitle}" vence em ${daysUntilDue} dia(s)`,
+      type: NotificationType.SYSTEM,
       recipientId,
       entityId: taskId,
-      entityType: 'task',
-      metadata: { dueDate: dueDate.toISOString(), daysUntilDue },
+      entityType: EntityType.TASK,
+      metadata: { 
+        title: 'Lembrete de prazo',
+        message: `A tarefa "${taskTitle}" vence em ${daysUntilDue} dia(s)`,
+        taskTitle,
+        dueDate: dueDate.toISOString(), 
+        daysUntilDue 
+      },
     });
   }
 }
