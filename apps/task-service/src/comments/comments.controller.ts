@@ -62,4 +62,12 @@ export class CommentsController {
       data.userId,
     );
   }
+
+  @MessagePattern('delete_comment')
+  async deleteComment(
+    @Payload() data: { commentId: number; userId: string },
+  ) {
+    await this.commentsService.remove(data.commentId, data.userId);
+    return { success: true };
+  }
 }

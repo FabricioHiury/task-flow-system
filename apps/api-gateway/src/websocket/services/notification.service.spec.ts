@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotificationService, NotificationPayload } from './notification.service';
-import { Notification } from '../entities/notification.entity';
+import { EntityType, Notification, NotificationType } from '../entities/notification.entity';
 
 describe('NotificationService', () => {
   let service: NotificationService;
@@ -41,13 +41,11 @@ describe('NotificationService', () => {
   describe('createAndSendNotification', () => {
     it('should create a notification successfully', async () => {
       const payload: NotificationPayload = {
-        type: 'task_assigned',
-        title: 'Nova tarefa atribuída',
-        message: 'Você foi atribuído a uma nova tarefa',
+        type: NotificationType.TASK_CREATED,
         recipientId: 'user-123',
         senderId: 'user-456',
         entityId: 'task-789',
-        entityType: 'task',
+        entityType: EntityType.TASK,
         metadata: { priority: 'high' },
       };
 
@@ -67,8 +65,6 @@ describe('NotificationService', () => {
 
       expect(mockRepository.create).toHaveBeenCalledWith({
         type: payload.type,
-        title: payload.title,
-        message: payload.message,
         recipientId: payload.recipientId,
         senderId: payload.senderId,
         entityId: payload.entityId,
@@ -83,10 +79,12 @@ describe('NotificationService', () => {
 
     it('should handle creation errors', async () => {
       const payload: NotificationPayload = {
-        type: 'task_assigned',
-        title: 'Nova tarefa atribuída',
-        message: 'Você foi atribuído a uma nova tarefa',
+        type: NotificationType.TASK_CREATED,
         recipientId: 'user-123',
+        senderId: 'user-456',
+        entityId: 'task-789',
+        entityType: EntityType.TASK,
+        metadata: { priority: 'high' },
       };
 
       mockRepository.create.mockReturnValue(payload);
@@ -371,17 +369,17 @@ describe('NotificationService', () => {
       const taskId = 'task-123';
       const taskTitle = 'Tarefa com Prazo';
       const recipientId = 'user-123';
-      const dueDate = new Date('2024-12-31');
+      const deadline = new Date('2024-12-31');
 
       const mockNotification = {
         id: 'notification-123',
         type: 'deadline_reminder',
         title: `Lembrete de prazo: ${taskTitle}`,
-        message: `A tarefa "${taskTitle}" vence em ${dueDate.toLocaleDateString('pt-BR')}`,
+        message: `A tarefa "${taskTitle}" vence em ${deadline.toLocaleDateString('pt-BR')}`,
         recipientId,
         entityId: taskId,
         entityType: 'task',
-        metadata: { dueDate: dueDate.toISOString() },
+        metadata: { deadline: deadline.toISOString() },
         isRead: false,
         createdAt: new Date(),
       };
@@ -393,7 +391,7 @@ describe('NotificationService', () => {
         taskId,
         taskTitle,
         recipientId,
-        dueDate,
+        deadline,
       );
 
       expect(result).toEqual(mockNotification);

@@ -1,3 +1,5 @@
+import { TaskPriority, TaskStatus, NotificationType } from '../enums';
+
 export interface User {
   id: string;
   email: string;
@@ -11,8 +13,8 @@ export interface Task {
   title: string;
   description: string;
   deadline: Date;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
+  priority: TaskPriority;
+  status: TaskStatus;
   createdBy: User;
   assignedUsers: User[];
   createdAt: Date;
@@ -30,7 +32,7 @@ export interface Comment {
 
 export interface Notification {
   id: string;
-  type: 'TASK_ASSIGNED' | 'TASK_STATUS_CHANGED' | 'NEW_COMMENT';
+  type: NotificationType;
   message: string;
   userId: string;
   taskId?: string;

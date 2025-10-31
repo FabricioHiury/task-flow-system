@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { createFileRoute, Navigate, Link } from '@tanstack/react-router'
+import { useState, useEffect } from 'react'
+import { createFileRoute, Navigate, Link, useSearch } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -22,19 +22,28 @@ const createTaskSchema = z.object({
   description: z.string().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),
   status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']).optional(),
-  dueDate: z.string().optional(),
+  deadline: z.string().optional(),
 })
 
 type CreateTaskForm = z.infer<typeof createTaskSchema>
 
 function TasksPage() {
   const { isAuthenticated, isLoading } = useAuth()
+  const searchParams = useSearch({ from: '/tasks' })
+  
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
+
+  // Aplicar filtros dos search params
+  useEffect(() => {
+    if (searchParams?.status) {
+      setStatusFilter(searchParams.status)
+    }
+  }, [searchParams])
 
   const { data: tasks, isLoading: tasksLoading } = useTasks()
   const createTaskMutation = useCreateTask()
@@ -44,9 +53,14 @@ function TasksPage() {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<CreateTaskForm>({
     resolver: zodResolver(createTaskSchema),
+    defaultValues: {
+      status: 'TODO',
+      priority: 'MEDIUM'
+    }
   })
 
   if (isLoading) {
@@ -204,7 +218,7 @@ function TasksPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Prioridade</Label>
-                  <Select onValueChange={(value) => register('priority').onChange({ target: { value } })}>
+                  <Select onValueChange={(value) => setValue('priority', value as 'LOW' | 'MEDIUM' | 'HIGH')} defaultValue="MEDIUM">
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a prioridade" />
                     </SelectTrigger>
@@ -218,7 +232,7 @@ function TasksPage() {
 
                 <div className="space-y-2">
                   <Label>Status</Label>
-                  <Select onValueChange={(value) => register('status').onChange({ target: { value } })}>
+                  <Select onValueChange={(value) => setValue('status', value as 'TODO' | 'IN_PROGRESS' | 'DONE')} defaultValue="TODO">
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
@@ -232,11 +246,11 @@ function TasksPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dueDate">Data de Vencimento</Label>
+                <Label htmlFor="deadline">Data de Vencimento</Label>
                 <Input
-                  id="dueDate"
+                  id="deadline"
                   type="date"
-                  {...register('dueDate')}
+                  {...register('deadline')}
                 />
               </div>
 
@@ -335,10 +349,10 @@ function TasksPage() {
                         <Calendar className="h-4 w-4" />
                         Criada em {new Date(task.createdAt).toLocaleDateString('pt-BR')}
                       </span>
-                      {task.dueDate && (
+                      {task.deadline && (
                         <span className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
-                          Vence em {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                          Vence em {new Date(task.deadline).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                         </span>
                       )}
                     </div>
@@ -399,4 +413,9 @@ function TasksPage() {
 
 export const Route = createFileRoute('/tasks')({
   component: TasksPage,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      status: (search.status as string) || undefined,
+    }
+  },
 })

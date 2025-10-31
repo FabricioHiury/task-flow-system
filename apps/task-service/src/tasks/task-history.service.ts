@@ -72,10 +72,12 @@ export class TaskHistoryService {
 
     // Check for status change
     if (previousTask.status !== updatedTask.status) {
-      changes.push(`status changed from "${previousTask.status}" to "${updatedTask.status}"`);
+      changes.push(
+        `status changed from "${previousTask.status}" to "${updatedTask.status}"`,
+      );
       previousValues.status = previousTask.status;
       newValues.status = updatedTask.status;
-      
+
       await this.createHistoryEntry(
         taskId,
         ChangeType.STATUS_CHANGED,
@@ -109,7 +111,9 @@ export class TaskHistoryService {
           { assignedTo: updatedTask.assignedTo },
         );
       } else {
-        changes.push(`assignment changed from user ${previousTask.assignedTo} to user ${updatedTask.assignedTo}`);
+        changes.push(
+          `assignment changed from user ${previousTask.assignedTo} to user ${updatedTask.assignedTo}`,
+        );
         await this.createHistoryEntry(
           taskId,
           ChangeType.ASSIGNED,
@@ -125,10 +129,12 @@ export class TaskHistoryService {
 
     // Check for priority change
     if (previousTask.priority !== updatedTask.priority) {
-      changes.push(`priority changed from "${previousTask.priority}" to "${updatedTask.priority}"`);
+      changes.push(
+        `priority changed from "${previousTask.priority}" to "${updatedTask.priority}"`,
+      );
       previousValues.priority = previousTask.priority;
       newValues.priority = updatedTask.priority;
-      
+
       await this.createHistoryEntry(
         taskId,
         ChangeType.PRIORITY_CHANGED,
@@ -141,12 +147,20 @@ export class TaskHistoryService {
 
     // Check for deadline change
     if (previousTask.deadline !== updatedTask.deadline) {
-      const prevDeadline = previousTask.deadline ? previousTask.deadline.toISOString() : 'none';
-      const newDeadline = updatedTask.deadline ? updatedTask.deadline.toISOString() : 'none';
+      const prevDeadline = previousTask.deadline
+        ? previousTask.deadline instanceof Date
+          ? previousTask.deadline.toISOString()
+          : new Date(previousTask.deadline).toISOString()
+        : 'none';
+      const newDeadline = updatedTask.deadline
+        ? updatedTask.deadline instanceof Date
+          ? updatedTask.deadline.toISOString()
+          : new Date(updatedTask.deadline).toISOString()
+        : 'none';
       changes.push(`deadline changed from ${prevDeadline} to ${newDeadline}`);
       previousValues.deadline = previousTask.deadline;
       newValues.deadline = updatedTask.deadline;
-      
+
       await this.createHistoryEntry(
         taskId,
         ChangeType.DEADLINE_CHANGED,
@@ -158,16 +172,22 @@ export class TaskHistoryService {
     }
 
     // Check for title or description changes
-    if (previousTask.title !== updatedTask.title || previousTask.description !== updatedTask.description) {
+    if (
+      previousTask.title !== updatedTask.title ||
+      previousTask.description !== updatedTask.description
+    ) {
       const titleChanged = previousTask.title !== updatedTask.title;
-      const descriptionChanged = previousTask.description !== updatedTask.description;
-      
+      const descriptionChanged =
+        previousTask.description !== updatedTask.description;
+
       if (titleChanged) {
-        changes.push(`title changed from "${previousTask.title}" to "${updatedTask.title}"`);
+        changes.push(
+          `title changed from "${previousTask.title}" to "${updatedTask.title}"`,
+        );
         previousValues.title = previousTask.title;
         newValues.title = updatedTask.title;
       }
-      
+
       if (descriptionChanged) {
         changes.push('description was updated');
         previousValues.description = previousTask.description;

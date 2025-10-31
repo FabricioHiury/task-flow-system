@@ -22,6 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { NotificationService } from '../services/notification.service';
+import type { PaginationDto } from '@task-flow/shared';
 import { CreateNotificationDto, NotificationResponseDto } from '../dto';
 
 @ApiTags('Notifications')
@@ -64,19 +65,22 @@ export class NotificationsController {
   })
   async getAllNotifications(
     @Request() req: any,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
+    @Query() paginationDto: PaginationDto,
   ) {
-    const userId = req.user.sub;
+    const userId = req.user.id;
     const { notifications, total } =
-      await this.notificationService.getAllNotifications(userId, page, limit);
+      await this.notificationService.getAllNotifications(
+        userId,
+        paginationDto.page,
+        paginationDto.size,
+      );
 
     return {
       notifications,
       total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      page: paginationDto.page,
+      size: paginationDto.size,
+      totalPages: Math.ceil(total / (paginationDto.size || 10)),
     };
   }
 
@@ -88,7 +92,7 @@ export class NotificationsController {
     type: [NotificationResponseDto],
   })
   async getUnreadNotifications(@Request() req: any) {
-    const userId = req.user.sub;
+    const userId = req.user.id;
     return this.notificationService.getPendingNotifications(userId);
   }
 
@@ -105,7 +109,7 @@ export class NotificationsController {
     },
   })
   async getUnreadCount(@Request() req: any) {
-    const userId = req.user.sub;
+    const userId = req.user.id;
     const count = await this.notificationService.getUnreadCount(userId);
     return { count };
   }
@@ -122,7 +126,7 @@ export class NotificationsController {
     @Body() createNotificationDto: CreateNotificationDto,
     @Request() req: any,
   ) {
-    const senderId = req.user.sub;
+    const senderId = req.user.id;
     return this.notificationService.createAndSendNotification({
       ...createNotificationDto,
       senderId,
@@ -144,7 +148,7 @@ export class NotificationsController {
     },
   })
   async markAsRead(@Param('id') notificationId: string, @Request() req: any) {
-    const userId = req.user.sub;
+    const userId = req.user.id;
     const success = await this.notificationService.markAsRead(
       notificationId,
       userId,
@@ -172,7 +176,7 @@ export class NotificationsController {
     },
   })
   async markAllAsRead(@Request() req: any) {
-    const userId = req.user.sub;
+    const userId = req.user.id;
     const count = await this.notificationService.markAllAsRead(userId);
 
     return {
@@ -199,7 +203,7 @@ export class NotificationsController {
     @Param('id') notificationId: string,
     @Request() req: any,
   ) {
-    const userId = req.user.sub;
+    const userId = req.user.id;
     const success = await this.notificationService.deleteNotification(
       notificationId,
       userId,

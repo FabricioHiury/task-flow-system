@@ -66,7 +66,7 @@ function TaskDetailPage() {
 
   const handleDeleteComment = async (commentId: string) => {
     try {
-      await deleteCommentMutation.mutateAsync(commentId)
+      await deleteCommentMutation.mutateAsync({ taskId, commentId })
       toast({
         title: 'Comentário removido',
         description: 'O comentário foi removido com sucesso.',
@@ -124,7 +124,7 @@ function TaskDetailPage() {
               <p className="text-muted-foreground mb-4">
                 A tarefa que você está procurando não existe ou foi removida.
               </p>
-              <Button onClick={() => navigate({ to: '/tasks' })}>
+              <Button onClick={() => navigate({ to: '/tasks', search: { status: undefined } })}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Voltar para Tarefas
               </Button>
@@ -142,7 +142,7 @@ function TaskDetailPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate({ to: '/tasks' })}
+          onClick={() => navigate({ to: '/tasks', search: { status: undefined } })}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar
@@ -181,10 +181,10 @@ function TaskDetailPage() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span>Criada em: {new Date(task.createdAt).toLocaleDateString('pt-BR')}</span>
             </div>
-            {task.dueDate && (
+            {task.deadline && (
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>Vence em: {new Date(task.dueDate).toLocaleDateString('pt-BR')}</span>
+                <span>Vence em: {new Date(task.deadline).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</span>
               </div>
             )}
           </div>
@@ -247,7 +247,7 @@ function TaskDetailPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{comment.author.name}</span>
+                      <span className="font-medium">{comment.username || comment.createdBy}</span>
                       <span className="text-sm text-muted-foreground">
                         {new Date(comment.createdAt).toLocaleDateString('pt-BR')} às{' '}
                         {new Date(comment.createdAt).toLocaleTimeString('pt-BR', {
@@ -256,7 +256,7 @@ function TaskDetailPage() {
                         })}
                       </span>
                     </div>
-                    {user && comment.authorId === user.id && (
+                    {user && comment.createdBy === user.id && (
                       <Button
                         variant="ghost"
                         size="sm"

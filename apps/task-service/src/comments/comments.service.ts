@@ -34,23 +34,30 @@ export class CommentsService {
       content: savedComment.content,
       createdBy: savedComment.createdBy,
       createdAt: savedComment.createdAt,
-      taskOwnerId: savedComment.createdBy, // Assuming the comment creator should be notified
+      taskOwnerId: savedComment.createdBy, 
     });
 
     return savedComment;
   }
 
   async findByTask(taskId: number): Promise<Comment[]> {
-    return this.commentRepository.find({
+    const comments = await this.commentRepository.find({
       where: { taskId },
       order: { createdAt: 'ASC' },
+      relations: ['user'],
     });
+    
+    return comments.map(comment => ({
+      ...comment,
+      createdBy: comment.createdBy, 
+      username: comment.user?.fullName || comment.createdBy, 
+    }));
   }
 
   async findOne(id: number): Promise<Comment> {
     const comment = await this.commentRepository.findOne({
       where: { id },
-      relations: ['task'],
+      relations: ['task', 'user'],
     });
 
     if (!comment) {

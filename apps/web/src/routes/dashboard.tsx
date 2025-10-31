@@ -1,4 +1,4 @@
-import { createFileRoute, Navigate } from '@tanstack/react-router'
+import { createFileRoute, Navigate, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@/contexts/auth-context'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -9,8 +9,25 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 function DashboardPage() {
   const { isAuthenticated, isLoading, user } = useAuth()
+  const navigate = useNavigate()
 
   const { data: tasks, isLoading: tasksLoading } = useTasks()
+
+  const handleCreateTask = () => {
+    navigate({ to: '/tasks', search: { status: undefined } })
+  }
+
+  const handleViewAllTasks = () => {
+    navigate({ to: '/tasks', search: { status: undefined } })
+  }
+
+  const handleViewInProgressTasks = () => {
+    navigate({ to: '/tasks', search: { status: 'IN_PROGRESS' } })
+  }
+
+  const handleViewPendingTasks = () => {
+    navigate({ to: '/tasks', search: { status: 'TODO' } })
+  }
 
   if (isLoading) {
     return (
@@ -174,7 +191,7 @@ function DashboardPage() {
               <div className="text-center py-8">
                 <CheckSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">Nenhuma tarefa encontrada</p>
-                <Button className="mt-4" size="sm">
+                <Button className="mt-4" size="sm" onClick={handleCreateTask}>
                   <Plus className="h-4 w-4 mr-2" />
                   Criar primeira tarefa
                 </Button>
@@ -193,22 +210,38 @@ function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={handleCreateTask}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Criar Nova Tarefa
               </Button>
               
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={handleViewAllTasks}
+              >
                 <CheckSquare className="h-4 w-4 mr-2" />
                 Ver Todas as Tarefas
               </Button>
               
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={handleViewInProgressTasks}
+              >
                 <Clock className="h-4 w-4 mr-2" />
                 Tarefas em Progresso
               </Button>
               
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={handleViewPendingTasks}
+              >
                 <AlertCircle className="h-4 w-4 mr-2" />
                 Tarefas Pendentes
               </Button>

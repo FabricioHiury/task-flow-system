@@ -80,12 +80,9 @@ export class TasksController {
   async getTasks(@Query() filters: TaskFilters, @Request() req) {
     try {
       const token = req.headers.authorization?.replace('Bearer ', '');
-      console.log('Token extracted:', token ? 'Token present' : 'No token');
-      console.log('Authorization header:', req.headers.authorization);
       const result = await firstValueFrom(
-        this.taskServiceClient.getTasks({
+        this.taskServiceClient.getTasks(req.user.sub, {
           ...filters,
-          userId: req.user.sub,
           token,
         }),
       );
@@ -331,6 +328,38 @@ export class TasksController {
           },
         },
         HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Delete(':taskId/comments/:commentId')
+  @ApiOperation({ summary: 'Delete comment' })
+  @ApiResponse({ status: 200, description: 'Comment deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Comment not found' })
+  async deleteComment(
+    @Param('taskId') taskId: string,
+    @Param('commentId') commentId: string,
+    @Request() req,
+  ) {
+    try {
+      const result = await firstValueFrom(
+        this.taskServiceClient.deleteComment(commentId, req.user.sub),
+      );
+      return {
+        success: true,
+        data: result,
+        message: 'Comment deleted successfully',
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          success: false,
+          error: {
+            code: 'COMMENT_DELETION_FAILED',
+            message: error.message || 'Failed to delete comment',
+          },
+        },
+        HttpStatus.NOT_FOUND,
       );
     }
   }

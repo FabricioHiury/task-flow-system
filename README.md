@@ -25,7 +25,7 @@ Sistema de Gestão de Tarefas Colaborativo construído com arquitetura de micros
         ▼                       ▼                        ▼               ▼
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
 │ PostgreSQL  │    │  RabbitMQ   │    │    Redis    │    │  WebSocket  │
-│ Port: 5434  │    │ Port: 5672  │    │ Port: 6380  │    │ Real-time   │
+│ Port: 5432  │    │ Port: 5672  │    │ Port: 6380  │    │ Real-time   │
 │ (Database)  │    │ (Message    │    │ (Cache)     │    │ Updates     │
 │             │    │  Broker)    │    │             │    │             │
 └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘

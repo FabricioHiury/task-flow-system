@@ -34,27 +34,27 @@ export class NotificationsService {
 
   async findAll(userId: string): Promise<Notification[]> {
     return this.notificationRepository.find({
-      where: { userId },
+      where: { recipientId: userId },
       order: { createdAt: 'DESC' },
     });
   }
 
   async findUnread(userId: string): Promise<Notification[]> {
     return this.notificationRepository.find({
-      where: { userId, isRead: false },
+      where: { recipientId: userId, isRead: false },
       order: { createdAt: 'DESC' },
     });
   }
 
   async countUnread(userId: string): Promise<number> {
     return this.notificationRepository.count({
-      where: { userId, isRead: false },
+      where: { recipientId: userId, isRead: false },
     });
   }
 
   async markAsRead(id: string, userId: string): Promise<Notification> {
     const notification = await this.notificationRepository.findOne({
-      where: { id, userId },
+      where: { id, recipientId: userId },
     });
 
     if (!notification) {
@@ -68,13 +68,13 @@ export class NotificationsService {
 
   async markAllAsRead(userId: string): Promise<void> {
     await this.notificationRepository.update(
-      { userId, isRead: false },
+      { recipientId: userId, isRead: false },
       { isRead: true, readAt: new Date() },
     );
   }
 
   async delete(id: string, userId: string): Promise<void> {
-    const result = await this.notificationRepository.delete({ id, userId });
+    const result = await this.notificationRepository.delete({ id, recipientId: userId });
     if (result.affected === 0) {
       throw new Error('Notification not found');
     }

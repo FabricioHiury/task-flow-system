@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 
 export enum NotificationType {
   TASK_CREATED = 'task_created',
@@ -16,6 +23,8 @@ export enum EntityType {
 }
 
 @Entity('notifications')
+@Index(['recipientId', 'isRead'])
+@Index(['recipientId', 'createdAt'])
 export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -27,30 +36,32 @@ export class Notification {
   })
   type: NotificationType;
 
-  @Column('jsonb', { nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   metadata?: Record<string, any>;
 
   @Column({ name: 'recipient_id' })
-  userId: string;
+  @Index()
+  recipientId: string;
 
-  @Column({ nullable: true, name: 'sender_id' })
+  @Column({ name: 'sender_id', nullable: true })
   senderId?: string;
 
-  @Column({ nullable: true, name: 'entity_id' })
-  relatedEntityId?: string;
+  @Column({ name: 'entity_id', nullable: true })
+  entityId?: string;
 
-  @Column({
+  @Column({ 
+    name: 'entity_type',
     type: 'enum',
     enum: EntityType,
-    nullable: true,
-    name: 'entity_type',
+    nullable: true 
   })
   entityType?: EntityType;
 
   @Column({ name: 'is_read', default: false })
+  @Index()
   isRead: boolean;
 
-  @Column({ nullable: true, name: 'read_at' })
+  @Column({ name: 'read_at', type: 'timestamp', nullable: true })
   readAt?: Date;
 
   @CreateDateColumn()

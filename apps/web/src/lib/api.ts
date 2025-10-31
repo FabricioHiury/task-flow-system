@@ -28,9 +28,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      if (!window.location.pathname.includes('/login')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -84,7 +86,7 @@ export interface Task {
   description?: string;
   status: 'TODO' | 'IN_PROGRESS' | 'DONE';
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
-  dueDate?: string;
+  deadline?: string;
   assignedToId?: string;
   assignedTo?: {
     id: string;
@@ -100,7 +102,7 @@ export interface CreateTaskRequest {
   description?: string;
   status?: 'TODO' | 'IN_PROGRESS' | 'DONE';
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
-  dueDate?: string;
+  deadline?: string;
   assignedToId?: string;
 }
 
@@ -115,7 +117,7 @@ export const taskService = {
 
   getTask: async (id: string): Promise<Task> => {
     const response = await api.get(`/tasks/${id}`);
-    return response.data;
+    return response.data.data;
   },
 
   createTask: async (data: CreateTaskRequest): Promise<Task> => {
@@ -138,12 +140,8 @@ export interface Comment {
   id: string;
   content: string;
   taskId: string;
-  authorId: string;
-  author: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  createdBy: string;
+  username?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -157,32 +155,54 @@ export interface CreateCommentRequest {
 export const commentService = {
   getComments: async (taskId: string): Promise<Comment[]> => {
     const response = await api.get(`/tasks/${taskId}/comments`);
-    return response.data;
+    return response.data.data;
   },
 
   createComment: async (data: CreateCommentRequest): Promise<Comment> => {
-    const response = await api.post('/comments', data);
-    return response.data;
+    const response = await api.post(`/tasks/${data.taskId}/comments`, { content: data.content });
+    return response.data.data;
   },
 
-  deleteComment: async (id: string): Promise<void> => {
-    await api.delete(`/comments/${id}`);
+  deleteComment: async (taskId: string, id: string): Promise<void> => {
+    await api.delete(`/tasks/${taskId}/comments/${id}`);
   },
 };
 
 // Tipos para notificações
 export interface Notification {
   id: string;
-  title: string;
-  message: string;
-  type: 'TASK_ASSIGNED' | 'TASK_UPDATED' | 'COMMENT_ADDED' | 'TASK_DUE_SOON';
-  status: 'UNREAD' | 'READ';
-  userId: string;
-  relatedEntityId?: string;
-  metadata?: Record<string, any>;
+  type: string;
+  metadata: {
+    title: string;
+    message: string;
+    taskTitle?: string;
+    priority?: string;
+    changes?: Record<string, any>;
+  };
+  recipientId: string;
+  senderId?: string;
+  entityId?: string;
+  isRead: boolean;
+  readAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
+
+export const getNotificationDisplayType = (type: string): string => {
+  const typeMap: Record<string, string> = {
+    'task_created': 'TASK_ASSIGNED',
+    'task_updated': 'TASK_UPDATED',
+    'task_deleted': 'TASK_DELETED',
+    'comment_created': 'COMMENT_CREATED',
+    'comment_deleted': 'COMMENT_DELETED',
+    'system': 'SYSTEM',
+  };
+  return typeMap[type] || type;
+};
+
+export const getNotificationStatus = (isRead: boolean): 'UNREAD' | 'READ' => {
+  return isRead ? 'READ' : 'UNREAD';
+};
 
 // Serviços de notificações
 export const notificationService = {
