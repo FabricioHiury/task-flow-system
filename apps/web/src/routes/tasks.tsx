@@ -16,13 +16,15 @@ import { Plus, Search, Trash2, Edit, CheckSquare, Clock, Calendar } from 'lucide
 import { TaskListSkeleton } from '@/components/skeletons/task-skeleton'
 import { EditTaskModal } from '@/components/edit-task-modal'
 import type { Task } from '@/lib/api'
+import { useUsers } from '@/hooks/useUsers'
 
 const createTaskSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório'),
   description: z.string().optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE']).optional(),
   deadline: z.string().optional(),
+  assignedUserIds: z.array(z.string()).optional(),
 })
 
 type CreateTaskForm = z.infer<typeof createTaskSchema>
@@ -30,6 +32,7 @@ type CreateTaskForm = z.infer<typeof createTaskSchema>
 function TasksPage() {
   const { isAuthenticated, isLoading } = useAuth()
   const searchParams = useSearch({ from: '/tasks' })
+  const { data: users = [], isLoading: usersLoading } = useUsers()
   
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -54,14 +57,27 @@ function TasksPage() {
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<CreateTaskForm>({
     resolver: zodResolver(createTaskSchema),
     defaultValues: {
       status: 'TODO',
-      priority: 'MEDIUM'
+      priority: 'MEDIUM',
+      assignedUserIds: []
     }
   })
+
+  const selectedUsers = watch('assignedUserIds') || []
+
+  const handleUserToggle = (userId: string) => {
+    const currentUsers = selectedUsers || []
+    if (currentUsers.includes(userId)) {
+      setValue('assignedUserIds', currentUsers.filter(id => id !== userId))
+    } else {
+      setValue('assignedUserIds', [...currentUsers, userId])
+    }
+  }
 
   if (isLoading) {
     return (
@@ -131,7 +147,14 @@ function TasksPage() {
     createTaskMutation.mutate(taskData, {
       onSuccess: () => {
         setShowCreateForm(false)
-        reset()
+        reset({
+          title: '',
+          description: '',
+          status: 'TODO',
+          priority: 'MEDIUM',
+          deadline: '',
+          assignedUserIds: []
+        })
       }
     })
   }
@@ -153,8 +176,12 @@ function TasksPage() {
         return 'Concluída'
       case 'IN_PROGRESS':
         return 'Em Progresso'
-      default:
+      case 'REVIEW':
+        return 'Em Revisão'
+      case 'TODO':
         return 'Pendente'
+      default:
+        return status
     }
   }
 
@@ -164,9 +191,50 @@ function TasksPage() {
         return 'Alta'
       case 'MEDIUM':
         return 'Média'
-      default:
+      case 'URGENT':
+        return 'Urgente'
+      case 'LOW':
         return 'Baixa'
+      default:
+        return priority
     }
+  }
+
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+      case 'DONE':
+        return 'default'
+      case 'IN_PROGRESS':
+        return 'secondary'
+      case 'REVIEW':
+        return 'outline'
+      case 'TODO':
+        return 'outline'
+      default:
+        return 'outline'
+    }
+  }
+
+  const getPriorityVariant = (priority: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (priority) {
+      case 'URGENT':
+        return 'destructive'
+      case 'HIGH':
+        return 'default'
+      case 'MEDIUM':
+        return 'secondary'
+      case 'LOW':
+        return 'outline'
+      default:
+        return 'outline'
+    }
+  }
+
+  const getAssignedUserNames = (assignedUserIds: string[] = []): string[] => {
+    return assignedUserIds.map(userId => {
+      const user = users.find(u => u.id === userId)
+      return user ? user.fullName : 'Usuário não encontrado'
+    })
   }
 
   return (
@@ -218,7 +286,7 @@ function TasksPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Prioridade</Label>
-                  <Select onValueChange={(value) => setValue('priority', value as 'LOW' | 'MEDIUM' | 'HIGH')} defaultValue="MEDIUM">
+                  <Select onValueChange={(value) => setValue('priority', value as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT')} defaultValue="MEDIUM">
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a prioridade" />
                     </SelectTrigger>
@@ -226,19 +294,21 @@ function TasksPage() {
                       <SelectItem value="LOW">Baixa</SelectItem>
                       <SelectItem value="MEDIUM">Média</SelectItem>
                       <SelectItem value="HIGH">Alta</SelectItem>
+                      <SelectItem value="URGENT">Urgente</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Status</Label>
-                  <Select onValueChange={(value) => setValue('status', value as 'TODO' | 'IN_PROGRESS' | 'DONE')} defaultValue="TODO">
+                  <Select onValueChange={(value) => setValue('status', value as 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE')} defaultValue="TODO">
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="TODO">Pendente</SelectItem>
                       <SelectItem value="IN_PROGRESS">Em Progresso</SelectItem>
+                      <SelectItem value="REVIEW">Em Revisão</SelectItem>
                       <SelectItem value="DONE">Concluída</SelectItem>
                     </SelectContent>
                   </Select>
@@ -252,6 +322,35 @@ function TasksPage() {
                   type="date"
                   {...register('deadline')}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Atribuir a Usuários</Label>
+                <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                  {usersLoading ? (
+                    <p className="text-sm text-muted-foreground">Carregando usuários...</p>
+                  ) : users.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhum usuário encontrado</p>
+                  ) : (
+                    users.map((user) => (
+                      <div key={user.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`create-${user.id}`}
+                          checked={selectedUsers.includes(user.id)}
+                          onChange={() => handleUserToggle(user.id)}
+                          className="h-4 w-4 rounded border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        />
+                        <label
+                          htmlFor={`create-${user.id}`}
+                          className="text-sm font-medium leading-none cursor-pointer"
+                        >
+                          {user.fullName} ({user.username})
+                        </label>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end gap-2">
@@ -291,6 +390,7 @@ function TasksPage() {
                   <SelectItem value="all">Todos os Status</SelectItem>
                   <SelectItem value="TODO">Pendente</SelectItem>
                   <SelectItem value="IN_PROGRESS">Em Progresso</SelectItem>
+                  <SelectItem value="REVIEW">Em Revisão</SelectItem>
                   <SelectItem value="DONE">Concluída</SelectItem>
                 </SelectContent>
               </Select>
@@ -303,6 +403,7 @@ function TasksPage() {
                   <SelectItem value="LOW">Baixa</SelectItem>
                   <SelectItem value="MEDIUM">Média</SelectItem>
                   <SelectItem value="HIGH">Alta</SelectItem>
+                  <SelectItem value="URGENT">Urgente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -332,16 +433,29 @@ function TasksPage() {
                       >
                         <h3 className="font-semibold text-lg">{task.title}</h3>
                       </Link>
-                      <Badge variant={task.status === 'DONE' ? 'default' : task.status === 'IN_PROGRESS' ? 'secondary' : 'outline'}>
+                      <Badge variant={getStatusVariant(task.status)}>
                         {getStatusText(task.status)}
                       </Badge>
-                      <Badge variant={task.priority === 'HIGH' ? 'destructive' : task.priority === 'MEDIUM' ? 'default' : 'secondary'}>
+                      <Badge variant={getPriorityVariant(task.priority)}>
                         {getPriorityText(task.priority)}
                       </Badge>
                     </div>
                     
                     {task.description && (
                       <p className="text-muted-foreground mb-3">{task.description}</p>
+                    )}
+                    
+                    {task.assignedTo && task.assignedTo.length > 0 && (
+                      <div className="mb-3">
+                        <span className="text-sm font-medium text-muted-foreground">Atribuído a: </span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {getAssignedUserNames(task.assignedTo).map((userName, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {userName}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
                     )}
                     
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">

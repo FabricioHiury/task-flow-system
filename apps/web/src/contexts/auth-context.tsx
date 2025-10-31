@@ -12,9 +12,10 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string, fullName?: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -24,17 +25,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar se há token armazenado no localStorage
     const storedToken = localStorage.getItem('token');
+    const storedRefreshToken = localStorage.getItem('refreshToken');
     const storedUser = localStorage.getItem('user');
 
     if (storedToken && storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
         setToken(storedToken);
+        setRefreshToken(storedRefreshToken);
         setUser(parsedUser);
         
         // Conectar ao WebSocket
@@ -42,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error('Error parsing stored user:', error);
         localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
       }
     }
@@ -54,9 +58,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response: AuthResponse = await authService.login({ email, password });
       
       setToken(response.access_token);
+      setRefreshToken(response.refresh_token);
       setUser(response.user);
       
       localStorage.setItem('token', response.access_token);
+      localStorage.setItem('refreshToken', response.refresh_token);
       localStorage.setItem('user', JSON.stringify(response.user));
       
       // Conectar ao WebSocket
@@ -71,9 +77,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response: AuthResponse = await authService.register({ username, email, password, fullName });
       
       setToken(response.access_token);
+      setRefreshToken(response.refresh_token);
       setUser(response.user);
       
       localStorage.setItem('token', response.access_token);
+      localStorage.setItem('refreshToken', response.refresh_token);
       localStorage.setItem('user', JSON.stringify(response.user));
       
       // Conectar ao WebSocket
@@ -83,17 +91,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    
-    authService.logout();
-    socketService.disconnect();
+  const logout = async () => {
+    try {
+      // Fazer logout no backend para invalidar tokens
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        await authService.logoutBackend(refreshToken);
+      }
+    } catch (error) {
+      console.error('Error during backend logout:', error);
+    } finally {
+      // Limpar estado local independente do sucesso do logout no backend
+      setToken(null);
+      setRefreshToken(null);
+      setUser(null);
+      
+      authService.logout();
+      socketService.disconnect();
+    }
   };
 
   const value: AuthContextType = {
     user,
     token,
+    refreshToken,
     login,
     register,
     logout,

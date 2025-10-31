@@ -178,10 +178,16 @@ function DashboardPage() {
                           ? 'bg-green-100 text-green-800' 
                           : task.status === 'IN_PROGRESS'
                           ? 'bg-blue-100 text-blue-800'
-                          : 'bg-orange-100 text-orange-800'
+                          : task.status === 'REVIEW'
+                          ? 'bg-purple-100 text-purple-800'
+                          : task.status === 'TODO'
+                          ? 'bg-gray-100 text-gray-800'
+                          : 'bg-gray-100 text-gray-800'
                       }`}>
                         {task.status === 'DONE' ? 'Concluída' : 
-                         task.status === 'IN_PROGRESS' ? 'Em Progresso' : 'Pendente'}
+                         task.status === 'IN_PROGRESS' ? 'Em Progresso' : 
+                         task.status === 'REVIEW' ? 'Em Revisão' : 
+                         task.status === 'TODO' ? 'Pendente' : 'Pendente'}
                       </span>
                     </div>
                   </div>

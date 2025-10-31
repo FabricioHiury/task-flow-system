@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule } from '@nestjs/throttler';
-import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_INTERCEPTOR, APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 
 import { AuthModule } from './auth/auth.module';
@@ -12,6 +12,7 @@ import { WebSocketModule } from './websocket/websocket.module';
 import { TasksModule } from './tasks/tasks.module';
 import { MicroservicesModule } from './microservices/microservices.module';
 import { GuardsModule } from './common/guards/guards.module';
+import { LoggerModule } from './common/modules/logger.module';
 
 // Configurações
 import { validate } from './config/env.validation';
@@ -56,6 +57,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
       signOptions: { expiresIn: '15m' },
     }),
     GuardsModule,
+    LoggerModule,
     AuthModule,
     UsersModule,
     HealthModule,
@@ -64,6 +66,10 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     MicroservicesModule,
   ],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,

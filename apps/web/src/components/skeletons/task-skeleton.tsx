@@ -38,3 +38,26 @@ export function TaskListSkeleton() {
     </div>
   )
 }
+
+export function TaskDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-8 w-8" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-6 w-16 rounded-full" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

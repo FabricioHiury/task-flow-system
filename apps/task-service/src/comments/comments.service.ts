@@ -28,7 +28,7 @@ export class CommentsService {
     const savedComment = await this.commentRepository.save(comment);
 
     // Emit event for comment creation
-    this.rabbitClient.emit('notification.comment.created', {
+    this.rabbitClient.emit('task_comment_created', {
       id: savedComment.id.toString(),
       taskId: savedComment.taskId.toString(),
       content: savedComment.content,
@@ -40,18 +40,25 @@ export class CommentsService {
     return savedComment;
   }
 
-  async findByTask(taskId: number): Promise<Comment[]> {
-    const comments = await this.commentRepository.find({
+  async findByTask(taskId: number, paginationDto?: { page: number; size: number }): Promise<{ comments: Comment[]; total: number }> {
+    const { page = 1, size = 10 } = paginationDto || {};
+    const skip = (page - 1) * size;
+
+    const [comments, total] = await this.commentRepository.findAndCount({
       where: { taskId },
       order: { createdAt: 'ASC' },
       relations: ['user'],
+      skip,
+      take: size,
     });
     
-    return comments.map(comment => ({
+    const mappedComments = comments.map(comment => ({
       ...comment,
-      createdBy: comment.createdBy, 
-      username: comment.user?.fullName || comment.createdBy, 
+      createdBy: comment.createdBy, // Manter o ID original
+      username: comment.user?.username || comment.createdBy, // Adicionar username separado
     }));
+
+    return { comments: mappedComments, total };
   }
 
   async findOne(id: number): Promise<Comment> {

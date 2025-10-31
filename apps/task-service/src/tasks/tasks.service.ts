@@ -22,8 +22,14 @@ export class TasksService {
   ) {}
 
   async create(createTaskDto: CreateTaskDto, userId: string): Promise<Task> {
+    // Garantir que assignedTo seja sempre um array válido para o PostgreSQL
+    const assignedTo = createTaskDto.assignedUserIds && createTaskDto.assignedUserIds.length > 0 
+      ? createTaskDto.assignedUserIds 
+      : [];
+    
     const task = this.taskRepository.create({
       ...createTaskDto,
+      assignedTo,
       createdBy: userId,
     });
 
@@ -33,7 +39,7 @@ export class TasksService {
     await this.taskHistoryService.logTaskCreation(savedTask, userId);
 
     // Emit event for task creation
-    this.rabbitClient.emit('notification.task.created', {
+    this.rabbitClient.emit('task_created', {
       id: savedTask.id.toString(),
       title: savedTask.title,
       priority: savedTask.priority,
@@ -59,7 +65,7 @@ export class TasksService {
 
     if (userId) {
       queryBuilder.where(
-        'task.createdBy = :userId OR task.assignedTo = :userId',
+        'task.createdBy = :userId OR :userId = ANY("task"."assigned_to")',
         { userId },
       );
     }
@@ -72,18 +78,16 @@ export class TasksService {
     return { tasks, total };
   }
 
-  async findOne(id: number, userId?: string): Promise<Task> {
+  async findOne(id: string, userId: string): Promise<Task> {
     const queryBuilder = this.taskRepository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.comments', 'comments')
-      .where('task.id = :id', { id });
-
-    if (userId) {
-      queryBuilder.andWhere(
-        '(task.createdBy = :userId OR task.assignedTo = :userId)',
+      .leftJoinAndSelect('comments.user', 'commentUser')
+      .where('task.id = :id', { id })
+      .andWhere(
+        'task.createdBy = :userId OR :userId = ANY(task.assignedTo)',
         { userId },
       );
-    }
 
     const task = await queryBuilder.getOne();
 
@@ -95,7 +99,7 @@ export class TasksService {
   }
 
   async update(
-    id: number,
+    id: string,
     updateTaskDto: UpdateTaskDto,
     userId: string,
   ): Promise<Task> {
@@ -104,7 +108,18 @@ export class TasksService {
     // Store previous values for history
     const previousTask = { ...task };
     const previousStatus = task.status;
-    Object.assign(task, updateTaskDto);
+    
+    // Handle assignedUserIds separately
+    const updateData: any = { ...updateTaskDto };
+    if (updateTaskDto.assignedUserIds !== undefined) {
+      // Garantir que assignedTo seja sempre um array válido para o PostgreSQL
+      updateData.assignedTo = updateTaskDto.assignedUserIds && updateTaskDto.assignedUserIds.length > 0 
+        ? updateTaskDto.assignedUserIds 
+        : [];
+      delete updateData.assignedUserIds;
+    }
+    
+    Object.assign(task, updateData);
 
     const updatedTask = await this.taskRepository.save(task);
 
@@ -117,7 +132,7 @@ export class TasksService {
     );
 
     // Emit event for task update
-    this.rabbitClient.emit('notification.task.updated', {
+    this.rabbitClient.emit('task_updated', {
       id: updatedTask.id.toString(),
       title: updatedTask.title,
       previousStatus,
@@ -132,7 +147,7 @@ export class TasksService {
     return updatedTask;
   }
 
-  async remove(id: number, userId: string): Promise<{ success: boolean; taskId: number; title: string }> {
+  async remove(id: string, userId: string): Promise<{ success: boolean; taskId: string; title: string }> {
     // Validate userId is provided
     if (!userId || userId.trim() === '') {
       throw new Error('User ID is required for task deletion');
@@ -177,7 +192,7 @@ export class TasksService {
     return queryBuilder.getMany();
   }
 
-  async getTaskHistory(taskId: number, userId?: string): Promise<any[]> {
+  async getTaskHistory(taskId: string, userId?: string): Promise<any[]> {
     // Verify user has access to the task
     if (userId) {
       await this.findOne(taskId, userId);
@@ -186,12 +201,16 @@ export class TasksService {
     return this.taskHistoryService.getTaskHistory(taskId);
   }
 
-  async assignTask(taskId: number, assigneeId: string, userId: string): Promise<Task> {
+  async updateTaskStatus(taskId: string, status: TaskStatus, userId: string): Promise<Task> {
+    return this.update(taskId, { status }, userId);
+  }
+
+  async assignTask(taskId: string, assigneeId: string, userId: string): Promise<Task> {
     const task = await this.findOne(taskId, userId);
     
     // Store previous assignee for history
     const previousAssignee = task.assignedTo;
-    task.assignedTo = assigneeId;
+    task.assignedTo = [assigneeId];
 
     const updatedTask = await this.taskRepository.save(task);
 
@@ -204,7 +223,7 @@ export class TasksService {
     );
 
     // Emit event for task assignment
-    this.rabbitClient.emit('notification.task.updated', {
+    this.rabbitClient.emit('task_updated', {
       taskId: updatedTask.id.toString(),
       title: updatedTask.title,
       previousAssignee,

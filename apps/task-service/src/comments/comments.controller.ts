@@ -6,10 +6,11 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CommentsService } from './comments.service';
-import { CreateCommentDto } from '@task-flow/shared';
+import { CreateCommentDto, PaginationDto } from '@task-flow/shared';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import type { JwtPayload } from '../common/interfaces/jwt-payload.interface';
@@ -30,8 +31,11 @@ export class CommentsController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  findByTask(@Param('taskId') taskId: string) {
-    return this.commentsService.findByTask(+taskId);
+  findByTask(
+    @Param('taskId') taskId: string,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return this.commentsService.findByTask(+taskId, paginationDto);
   }
 
   @Get(':id')
@@ -48,8 +52,9 @@ export class CommentsController {
 
   // Microservice message patterns
   @MessagePattern('get_task_comments')
-  async getTaskComments(@Payload() data: { taskId: number }) {
-    return this.commentsService.findByTask(data.taskId);
+  async getTaskComments(@Payload() data: { taskId: number; page?: number; size?: number }) {
+    const paginationDto = { page: data.page || 1, size: data.size || 10 };
+    return this.commentsService.findByTask(data.taskId, paginationDto);
   }
 
   @MessagePattern('create_comment')

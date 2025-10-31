@@ -11,10 +11,12 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { Input } from '@/components/ui/input'
 import { useTask } from '@/hooks/useTasks'
 import { useComments, useCreateComment, useDeleteComment } from '@/hooks/useComments'
+import { useUsers } from '@/hooks/useUsers'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
 import { TaskSkeleton } from '@/components/skeletons/task-skeleton'
 import { CommentListSkeleton } from '@/components/skeletons/comment-skeleton'
+import { TaskHistory } from '@/components/task-history'
 
 const commentSchema = z.object({
   content: z.string().min(1, 'Comentário não pode estar vazio').max(500, 'Comentário muito longo'),
@@ -34,6 +36,7 @@ function TaskDetailPage() {
   
   const { data: task, isLoading: taskLoading } = useTask(taskId)
   const { data: comments = [], isLoading: commentsLoading } = useComments(taskId)
+  const { data: users = [] } = useUsers()
   const createCommentMutation = useCreateComment()
   const deleteCommentMutation = useDeleteComment()
 
@@ -43,6 +46,13 @@ function TaskDetailPage() {
       content: '',
     },
   })
+
+  const getAssignedUserNames = (assignedUserIds: string[] = []): string[] => {
+    return assignedUserIds.map(userId => {
+      const user = users.find(u => u.id === userId)
+      return user ? user.fullName : 'Usuário não encontrado'
+    })
+  }
 
   const onSubmitComment = async (data: CommentForm) => {
     try {
@@ -83,9 +93,11 @@ function TaskDetailPage() {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'TODO':
-        return 'A Fazer'
+        return 'Pendente'
       case 'IN_PROGRESS':
         return 'Em Progresso'
+      case 'REVIEW':
+        return 'Em Revisão'
       case 'DONE':
         return 'Concluída'
       default:
@@ -101,8 +113,40 @@ function TaskDetailPage() {
         return 'Média'
       case 'HIGH':
         return 'Alta'
+      case 'URGENT':
+        return 'Urgente'
       default:
         return priority
+    }
+  }
+
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+      case 'DONE':
+        return 'default'
+      case 'IN_PROGRESS':
+        return 'secondary'
+      case 'REVIEW':
+        return 'outline'
+      case 'TODO':
+        return 'outline'
+      default:
+        return 'outline'
+    }
+  }
+
+  const getPriorityVariant = (priority: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (priority) {
+      case 'URGENT':
+        return 'destructive'
+      case 'HIGH':
+        return 'default'
+      case 'MEDIUM':
+        return 'secondary'
+      case 'LOW':
+        return 'outline'
+      default:
+        return 'outline'
     }
   }
 
@@ -157,10 +201,10 @@ function TaskDetailPage() {
             <div className="space-y-2">
               <CardTitle className="text-xl">{task.title}</CardTitle>
               <div className="flex items-center gap-2">
-                <Badge variant={task.status === 'DONE' ? 'default' : task.status === 'IN_PROGRESS' ? 'secondary' : 'outline'}>
+                <Badge variant={getStatusVariant(task.status)}>
                   {getStatusText(task.status)}
                 </Badge>
-                <Badge variant={task.priority === 'HIGH' ? 'destructive' : task.priority === 'MEDIUM' ? 'default' : 'secondary'}>
+                <Badge variant={getPriorityVariant(task.priority)}>
                   <Flag className="h-3 w-3 mr-1" />
                   {getPriorityText(task.priority)}
                 </Badge>
@@ -173,6 +217,20 @@ function TaskDetailPage() {
             <div>
               <h4 className="font-semibold mb-2">Descrição</h4>
               <p className="text-muted-foreground">{task.description}</p>
+            </div>
+          )}
+          
+          {task.assignedTo && task.assignedTo.length > 0 && (
+            <div>
+              <h4 className="font-semibold mb-2">Atribuído a</h4>
+              <div className="flex flex-wrap gap-2">
+                {getAssignedUserNames(task.assignedTo).map((userName, index) => (
+                  <Badge key={index} variant="outline" className="text-sm">
+                    <User className="h-3 w-3 mr-1" />
+                    {userName}
+                  </Badge>
+                ))}
+              </div>
             </div>
           )}
           
@@ -247,7 +305,7 @@ function TaskDetailPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{comment.username || comment.createdBy}</span>
+                      <span className="font-medium">{comment.user?.fullName || comment.username || comment.createdBy}</span>
                       <span className="text-sm text-muted-foreground">
                         {new Date(comment.createdAt).toLocaleDateString('pt-BR')} às{' '}
                         {new Date(comment.createdAt).toLocaleTimeString('pt-BR', {
@@ -281,6 +339,9 @@ function TaskDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Task History */}
+      <TaskHistory taskId={taskId} />
     </div>
   )
 }

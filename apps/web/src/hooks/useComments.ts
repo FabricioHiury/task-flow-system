@@ -42,7 +42,6 @@ export function useDeleteComment() {
     mutationFn: ({ taskId, commentId }: { taskId: string; commentId: string }) => 
       commentService.deleteComment(taskId, commentId),
     onSuccess: (_, variables) => {
-      // Invalidar a query específica do taskId
       queryClient.invalidateQueries({ queryKey: commentKeys.list(variables.taskId) })
     },
     onError: (error: any) => {

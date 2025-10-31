@@ -10,7 +10,7 @@ export const databaseConfig = (
     'postgresql://postgres:password@localhost:5432/taskflow_notifications',
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
-  synchronize: configService.get<string>('NODE_ENV') !== 'production',
+  synchronize: true,
   logging: configService.get<string>('NODE_ENV') === 'development',
   ssl:
     configService.get<string>('NODE_ENV') === 'production'

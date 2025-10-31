@@ -10,7 +10,7 @@ export default new DataSource({
   url: process.env.DATABASE_URL || 'postgresql://taskflow:taskflow123@localhost:5432/taskflow',
   entities: [path.join(__dirname, '/../**/*.entity{.ts,.js}')],
   migrations: [path.join(__dirname, '/../migrations/*{.ts,.js}')],
-  synchronize: false, // Sempre false para migrations
+  synchronize: true, 
   logging: process.env.NODE_ENV === 'development',
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });

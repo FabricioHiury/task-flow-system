@@ -76,9 +76,9 @@ export class TaskServiceClient {
     );
   }
 
-  getTask(taskId: string, token?: string): Observable<any> {
-    this.logger.log(`Getting task: ${taskId}`);
-    return this.client.send('task.get', { taskId, token }).pipe(
+  getTask(taskId: string, userId: string, token?: string): Observable<any> {
+    this.logger.log(`Getting task: ${taskId} for user: ${userId}`);
+    return this.client.send('task.get', { taskId, userId, token }).pipe(
       timeout(10000),
       catchError((error) => {
         this.logger.error(`Failed to get task ${taskId}: ${error.message}`);
@@ -131,9 +131,13 @@ export class TaskServiceClient {
   }
 
   // Método para obter comentários de uma tarefa
-  getComments(taskId: string, token?: string): Observable<any> {
+  getComments(taskId: string, token?: string, pagination?: { page: number; size: number }): Observable<any> {
     this.logger.log(`Getting comments for task: ${taskId}`);
-    return this.client.send('get_task_comments', { taskId: +taskId }).pipe(
+    return this.client.send('get_task_comments', { 
+      taskId: +taskId,
+      page: pagination?.page || 1,
+      size: pagination?.size || 10
+    }).pipe(
       timeout(10000),
       catchError((error) => {
         this.logger.error(
@@ -152,6 +156,20 @@ export class TaskServiceClient {
       catchError((error) => {
         this.logger.error(
           `Failed to delete comment ${commentId}: ${error.message}`,
+        );
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  // Método para obter histórico de uma tarefa
+  getTaskHistory(taskId: string, token?: string): Observable<any> {
+    this.logger.log(`Getting history for task: ${taskId}`);
+    return this.client.send('task.getHistory', { taskId: +taskId, token }).pipe(
+      timeout(10000),
+      catchError((error) => {
+        this.logger.error(
+          `Failed to get history for task ${taskId}: ${error.message}`,
         );
         return throwError(() => error);
       }),
