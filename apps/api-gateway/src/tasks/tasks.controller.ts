@@ -33,6 +33,7 @@ import {
   NotFoundResponseDto,
   ValidationErrorResponseDto,
 } from '../common/dto';
+import { PaginationDto } from '@task-flow/shared';
 
 @ApiTags('Tasks')
 @ApiBearerAuth()
@@ -113,7 +114,7 @@ export class TasksController {
     try {
       const token = req.headers.authorization?.replace('Bearer ', '');
       const result = await firstValueFrom(
-        this.taskServiceClient.getTask(taskId, token),
+        this.taskServiceClient.getTask(taskId, req.user.sub, token),
       );
       return {
         success: true,
@@ -307,11 +308,15 @@ export class TasksController {
   @ApiOperation({ summary: 'Get task comments' })
   @ApiResponse({ status: 200, description: 'Comments retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Task not found' })
-  async getComments(@Param('id') taskId: string, @Request() req) {
+  async getComments(
+    @Param('id') taskId: string,
+    @Query() paginationDto: PaginationDto,
+    @Request() req,
+  ) {
     try {
       const token = req.headers.authorization?.replace('Bearer ', '');
       const result = await firstValueFrom(
-        this.taskServiceClient.getComments(taskId, token),
+        this.taskServiceClient.getComments(taskId, token, paginationDto),
       );
       return {
         success: true,
@@ -360,6 +365,35 @@ export class TasksController {
           },
         },
         HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
+  @Get(':id/history')
+  @ApiOperation({ summary: 'Get task history' })
+  @ApiResponse({ status: 200, description: 'Task history retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Task not found' })
+  async getTaskHistory(@Param('id') taskId: string, @Request() req) {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      const result = await firstValueFrom(
+        this.taskServiceClient.getTaskHistory(taskId, token),
+      );
+      return {
+        success: true,
+        data: result,
+        message: 'Task history retrieved successfully',
+      };
+    } catch (error) {
+      throw new HttpException(
+        {
+          success: false,
+          error: {
+            code: 'TASK_HISTORY_RETRIEVAL_FAILED',
+            message: error.message || 'Failed to retrieve task history',
+          },
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

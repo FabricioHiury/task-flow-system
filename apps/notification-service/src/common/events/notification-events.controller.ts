@@ -13,11 +13,15 @@ export class NotificationEventsController {
     return this.notificationsService.create(data);
   }
 
-  @MessagePattern('notification.task.created')
+  @MessagePattern('task_created')
   async handleTaskCreated(@Payload() data: any) {
-    const notification: CreateNotificationDto = {
+    const recipients = Array.isArray(data.assignedTo) && data.assignedTo.length > 0 
+      ? data.assignedTo 
+      : [data.createdBy];
+
+    const notifications = recipients.map((recipientId: string) => ({
       type: 'task_created' as any,
-      userId: data.assignedTo || data.createdBy,
+      userId: recipientId,
       senderId: data.createdBy,
       relatedEntityId: data.id,
       entityType: EntityType.TASK,
@@ -27,16 +31,20 @@ export class NotificationEventsController {
         title: 'Nova Tarefa Criada',
         message: `A tarefa "${data.title}" foi criada.`
       },
-    };
+    }));
 
-    return this.notificationsService.create(notification);
+    return Promise.all(notifications.map(n => this.notificationsService.create(n)));
   }
 
-  @MessagePattern('notification.task.updated')
+  @MessagePattern('task_updated')
   async handleTaskUpdated(@Payload() data: any) {
-    const notification: CreateNotificationDto = {
+    const recipients = Array.isArray(data.assignedTo) && data.assignedTo.length > 0 
+      ? data.assignedTo 
+      : [data.createdBy];
+
+    const notifications = recipients.map((recipientId: string) => ({
       type: 'task_updated' as any,
-      userId: data.assignedTo || data.createdBy,
+      userId: recipientId,
       senderId: data.updatedBy || data.createdBy,
       relatedEntityId: data.id,
       entityType: EntityType.TASK,
@@ -46,16 +54,20 @@ export class NotificationEventsController {
         title: 'Tarefa Atualizada',
         message: `A tarefa "${data.title}" foi atualizada.`
       },
-    };
+    }));
 
-    return this.notificationsService.create(notification);
+    return Promise.all(notifications.map(n => this.notificationsService.create(n)));
   }
 
   @MessagePattern('notification.task.deleted')
   async handleTaskDeleted(@Payload() data: any) {
-    const notification: CreateNotificationDto = {
+    const recipients = Array.isArray(data.assignedTo) && data.assignedTo.length > 0 
+      ? data.assignedTo 
+      : [data.createdBy];
+
+    const notifications = recipients.map((recipientId: string) => ({
       type: 'task_deleted' as any,
-      userId: data.assignedTo || data.createdBy,
+      userId: recipientId,
       senderId: data.deletedBy || data.createdBy,
       relatedEntityId: data.id,
       entityType: EntityType.TASK,
@@ -64,12 +76,12 @@ export class NotificationEventsController {
         title: 'Tarefa Deletada',
         message: `A tarefa "${data.title}" foi deletada.`
       },
-    };
+    }));
 
-    return this.notificationsService.create(notification);
+    return Promise.all(notifications.map(n => this.notificationsService.create(n)));
   }
 
-  @MessagePattern('notification.comment.created')
+  @MessagePattern('task_comment_created')
   async handleCommentCreated(@Payload() data: any) {
     const notification: CreateNotificationDto = {
       type: 'comment_created' as any,

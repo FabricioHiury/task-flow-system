@@ -61,43 +61,93 @@ Sistema de Gestão de Tarefas Colaborativo construído com arquitetura de micros
 - **Event-Driven Architecture**: Desacoplamento vs eventual consistency
 - **Repository Pattern**: Abstração de dados vs overhead de código
 
+## ✅ Funcionalidades Implementadas
+
+### Autenticação & Segurança
+- ✅ JWT com accessToken (15min) e refreshToken (7 dias)
+- ✅ Rate limiting configurado (10 req/seg)
+- ✅ Hash de senha com bcrypt
+- ✅ Logout individual e logout de todos os dispositivos
+- ✅ **Refresh token automático** no frontend com interceptor Axios
+- ✅ **Tokens persistidos** em localStorage com renovação transparente
+
+### Gestão de Tarefas
+- ✅ CRUD completo de tarefas
+- ✅ Status: TODO, IN_PROGRESS, REVIEW, DONE
+- ✅ Prioridade: LOW, MEDIUM, HIGH, URGENT
+- ✅ Atribuição múltipla de usuários (array)
+- ✅ Histórico de alterações (audit log)
+- ✅ Comentários com paginação
+
+### Notificações & Tempo Real
+- ✅ WebSocket para atualizações em tempo real
+- ✅ Eventos: task_created, task_updated, task_comment_created
+- ✅ Sistema de notificações persistente
+- ✅ **Contador de notificações** no header
+- ✅ **Interface responsiva** com mobile menu
+
+### Interface do Usuário
+- ✅ **Design moderno** com shadcn/ui e Tailwind CSS
+- ✅ **Layout responsivo** funcionando em desktop e mobile
+- ✅ **Skeleton loaders** para estados de carregamento
+- ✅ **Toast notifications** para feedback ao usuário
+- ✅ **Formulários validados** com react-hook-form + zod
+- ✅ **Navegação intuitiva** com TanStack Router
+
+### Monitoramento & Logs
+- ✅ Health checks em todos os serviços (`/health`, `/health/ready`, `/health/live`)
+- ✅ Logging estruturado com Winston
+- ✅ Middleware para logging HTTP
+
+### Banco de Dados
+- ✅ TypeORM
+- ✅ PostgreSQL com relacionamentos e índices
+
+### API & Documentação
+- ✅ Swagger/OpenAPI completo em `/api/docs`
+- ✅ Paginação implementada em endpoints de listagem
+- ✅ Respostas padronizadas com ApiResponseDto
+
 ## ⚠️ Problemas Conhecidos e Melhorias
 
 ### Problemas Identificados
 
-1. **Lentidão no Task Service**: Queries lentas na criação de tarefas `/api/tasks`
+1. **Performance**: Queries podem ser otimizadas com cache Redis (já configurado, mas não implementado nas queries)
+2. **Testes**: Testes unitários existem mas não cobrem todos os cenários
 
 ### Melhorias Propostas
 
 #### Curto Prazo
-- [ ] Implementar health checks para todos os serviços
-- [ ] Adicionar rate limiting no API Gateway
-- [ ] Adicionar métricas com Prometheus
+- [ ] Implementar cache Redis para queries frequentes de tarefas
+- [ ] Adicionar mais testes unitários e de integração
+- [ ] Implementar métricas com Prometheus
+- [ ] Adicionar reset de senha via e-mail
 
 #### Médio Prazo
-- [ ] Implementar Circuit Breaker pattern
-- [ ] Adicionar cache Redis para queries frequentes
+- [ ] Implementar Circuit Breaker pattern para comunicação entre serviços
 - [ ] Configurar CI/CD com GitHub Actions
 - [ ] Implementar observabilidade com OpenTelemetry
+- [ ] Adicionar dashboard administrativo
 
 #### Longo Prazo
 - [ ] Migrar para Kubernetes
-- [ ] Implementar Event Sourcing para auditoria
+- [ ] Implementar Event Sourcing para auditoria completa
 - [ ] Adicionar multi-tenancy
+- [ ] Implementar análise de dados e relatórios
 
 ## ⏱️ Tempo Gasto por Componente
 
 | Componente | Tempo Estimado | Principais Atividades |
 |------------|----------------|----------------------|
-| **Setup Inicial** | 2h | Docker, estrutura monorepo, configurações base |
-| **API Gateway** | 4h | Autenticação JWT, roteamento, middlewares |
-| **Task Service** | 3h | CRUD tarefas, relacionamentos, validações |
-| **Notification Service** | 3h | WebSocket setup, event handling, real-time |
-| **Frontend** | 5h | Components, routing, state management, UI |
-| **Integração** | 3h | Comunicação entre serviços, debugging |
-| **Debugging & Fixes** | 4h | Correção de bugs, ajustes de configuração |
-| **Documentação** | 1h | README, comentários, diagramas |
-| **Total** | **25h** | |
+| **Setup Inicial** | 6h | Docker, estrutura monorepo, configurações base, ambiente dev |
+| **API Gateway** | 12h | Autenticação JWT com refresh tokens, roteamento, middlewares, rate limiting, Swagger, health checks |
+| **Task Service** | 10h | CRUD tarefas, relacionamentos, validações, atribuição múltipla, histórico, migrações |
+| **Notification Service** | 10h | WebSocket setup, event handling, real-time, RabbitMQ integration, persistência |
+| **Frontend** | 15h | Components shadcn/ui, routing TanStack, auth context, TanStack Query, forms, skeletons, toasts |
+| **Integração** | 8h | Comunicação entre serviços, debugging, eventos RabbitMQ, WebSocket events |
+| **Debugging & Fixes** | 6h | Correção de bugs, ajustes de configuração, refresh token implementation, UI fixes |
+| **Documentação** | 3h | README detalhado, comentários, diagramas ASCII, documentação técnica |
+| **Total** | **70h** | |
 
 ## 🚀 Instruções de Execução
 
@@ -128,21 +178,32 @@ Sistema de Gestão de Tarefas Colaborativo construído com arquitetura de micros
    cp apps/api-gateway/.env.example apps/api-gateway/.env
    ```
 
-4. **Inicie os serviços**
+4. **Inicie os serviços com Docker**
    ```bash
-   # Subir toda a infraestrutura
+   # Sobe todos os containers (banco, rabbitmq, redis, serviços)
    pnpm docker:up
    
-   # Verificar logs
-   pnpm docker:logs
+   # Aguarde todos os serviços iniciarem (aproximadamente 2-3 minutos)
+   # Os bancos de dados são criados automaticamente
+   ```
+
+5. **Inicie o frontend em modo de desenvolvimento**
+   ```bash
+   # Em um novo terminal, após os containers estarem rodando
+   cd apps/web
+   pnpm dev
    ```
 
 ### Acessos
 
 - **Frontend**: http://localhost:5173
 - **API Gateway**: http://localhost:3000
+  - Health Check: http://localhost:3000/health
+  - Swagger Docs: http://localhost:3000/api/docs
 - **Task Service**: http://localhost:3001
+  - Health Check: http://localhost:3001/health
 - **Notification Service**: http://localhost:3002
+  - Health Check: http://localhost:3002/health
 - **RabbitMQ Management**: http://localhost:15672 (user: taskflow, pass: taskflow123)
 - **PostgreSQL**: localhost:5434 (user: taskflow, pass: taskflow123, db: taskflow)
 
@@ -150,15 +211,22 @@ Sistema de Gestão de Tarefas Colaborativo construído com arquitetura de micros
 
 ```bash
 # Desenvolvimento
-pnpm dev              # Inicia todos os serviços em modo dev
-pnpm build            # Build de produção
-pnpm lint             # Linting de código
-pnpm test             # Executa testes
+pnpm dev              # Inicia todos os serviços em modo dev (requer containers rodando)
+pnpm build            # Build de produção de todos os serviços
+pnpm lint             # Linting de código em todos os projetos
+pnpm test             # Executa testes em todos os projetos
+pnpm clean            # Limpa builds e caches
 
 # Docker
-pnpm docker:up        # Sobe containers
-pnpm docker:down      # Para containers
-pnpm docker:logs      # Visualiza logs
+pnpm docker:up        # Sobe todos os containers com docker-compose
+pnpm docker:down      # Para e remove todos os containers
+pnpm docker:logs      # Visualiza logs dos containers em tempo real
+
+# Comandos individuais (se necessário)
+cd apps/api-gateway && pnpm dev          # Inicia apenas o API Gateway
+cd apps/task-service && pnpm dev         # Inicia apenas o Task Service  
+cd apps/notification-service && pnpm dev # Inicia apenas o Notification Service
+cd apps/web && pnpm dev                  # Inicia apenas o Frontend
 ```
 
 ### Estrutura de Pastas

@@ -12,7 +12,7 @@ export class TaskHistoryService {
   ) {}
 
   async createHistoryEntry(
-    taskId: number,
+    taskId: string,
     changeType: ChangeType,
     changedBy: string,
     description?: string,
@@ -32,19 +32,20 @@ export class TaskHistoryService {
       newValues,
     });
 
-    return this.taskHistoryRepository.save(historyEntry);
+    return this.taskHistoryRepository.save([historyEntry])[0];
   }
 
-  async getTaskHistory(taskId: number): Promise<TaskHistory[]> {
+  async getTaskHistory(taskId: string): Promise<TaskHistory[]> {
     return this.taskHistoryRepository.find({
       where: { taskId },
+      relations: ['user'],
       order: { createdAt: 'DESC' },
     });
   }
 
   async logTaskCreation(task: Task, createdBy: string): Promise<void> {
     await this.createHistoryEntry(
-      task.id,
+      task.id.toString(),
       ChangeType.CREATED,
       createdBy,
       `Task "${task.title}" was created`,
@@ -61,7 +62,7 @@ export class TaskHistoryService {
   }
 
   async logTaskUpdate(
-    taskId: number,
+    taskId: string,
     previousTask: Partial<Task>,
     updatedTask: Partial<Task>,
     updatedBy: string,
@@ -209,7 +210,7 @@ export class TaskHistoryService {
 
   async logTaskDeletion(task: Task, deletedBy: string): Promise<void> {
     await this.createHistoryEntry(
-      task.id,
+      task.id.toString(),
       ChangeType.DELETED,
       deletedBy,
       `Task "${task.title}" was deleted`,

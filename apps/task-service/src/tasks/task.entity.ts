@@ -34,8 +34,13 @@ export class Task {
   })
   priority: TaskPriority;
 
-  @Column({ name: 'assigned_to', nullable: true })
-  assignedTo: string;
+  @Column({
+    type: 'text',
+    array: true,
+    name: 'assigned_to',
+    nullable: true,
+  })
+  assignedTo: string[];
 
   @Column({ name: 'created_by' })
   createdBy: string;

@@ -6,7 +6,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Task } from '../tasks/task.entity';
+import { Task } from './task.entity';
+import { User } from '../users/user.entity';
 
 export enum ChangeType {
   CREATED = 'created',
@@ -25,7 +26,7 @@ export class TaskHistory {
   id: number;
 
   @Column({ name: 'task_id' })
-  taskId: number;
+  taskId: string;
 
   @Column({
     type: 'enum',
@@ -48,6 +49,10 @@ export class TaskHistory {
   @ManyToOne(() => Task, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'task_id' })
   task: Task;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'changed_by' })
+  user: User;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

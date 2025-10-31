@@ -26,16 +26,19 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useUpdateTask } from '@/hooks/useTasks'
+import { useUsers } from '@/hooks/useUsers'
 import { useToast } from '@/hooks/use-toast'
 import type { Task } from '@/lib/api'
 
 const editTaskSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório'),
   description: z.string().optional(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE']),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
   deadline: z.string().optional(),
+  assignedUserIds: z.array(z.string()).optional(),
 })
 
 type EditTaskFormData = z.infer<typeof editTaskSchema>
@@ -48,6 +51,7 @@ interface EditTaskModalProps {
 
 export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) {
   const { toast } = useToast()
+  const { data: users = [], isLoading: usersLoading } = useUsers()
   const updateTaskMutation = useUpdateTask()
 
   const form = useForm<EditTaskFormData>({
@@ -56,8 +60,9 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
       title: '',
       description: '',
       status: 'TODO',
-      priority: 'MEDIUM',
+      priority: 'LOW',
       deadline: '',
+      assignedUserIds: [],
     },
   })
 
@@ -68,7 +73,8 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
         description: task.description || '',
         status: task.status,
         priority: task.priority,
-        deadline: task.deadline ? task.deadline.split('T')[0] : '', 
+        deadline: task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : '',
+        assignedUserIds: task.assignedTo || [],
       })
     }
   }, [task, form])
@@ -85,6 +91,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
           status: data.status,
           priority: data.priority,
           deadline: data.deadline || undefined,
+          assignedUserIds: data.assignedUserIds,
         },
       })
 
@@ -166,6 +173,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
                     <SelectContent>
                       <SelectItem value="TODO">Pendente</SelectItem>
                       <SelectItem value="IN_PROGRESS">Em Progresso</SelectItem>
+                      <SelectItem value="REVIEW">Em Revisão</SelectItem>
                       <SelectItem value="DONE">Concluída</SelectItem>
                     </SelectContent>
                   </Select>
@@ -190,6 +198,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
                       <SelectItem value="LOW">Baixa</SelectItem>
                       <SelectItem value="MEDIUM">Média</SelectItem>
                       <SelectItem value="HIGH">Alta</SelectItem>
+                      <SelectItem value="URGENT">Urgente</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -206,6 +215,47 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="assignedUserIds"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Atribuir a Usuários</FormLabel>
+                  <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                    {usersLoading ? (
+                      <p className="text-sm text-muted-foreground">Carregando usuários...</p>
+                    ) : users.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Nenhum usuário encontrado</p>
+                    ) : (
+                      users.map((user) => (
+                        <div key={user.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={user.id}
+                            checked={field.value?.includes(user.id) || false}
+                            onCheckedChange={(checked) => {
+                              const currentValue = field.value || []
+                              if (checked) {
+                                field.onChange([...currentValue, user.id])
+                              } else {
+                                field.onChange(currentValue.filter((id) => id !== user.id))
+                              }
+                            }}
+                          />
+                          <label
+                            htmlFor={user.id}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            {user.fullName} ({user.username})
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

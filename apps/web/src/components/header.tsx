@@ -1,5 +1,5 @@
-import { useAuth } from '@/contexts/auth-context'
-import { Button } from '@/components/ui/button'
+import { useAuth } from "@/contexts/auth-context";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,25 +7,25 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useUnreadNotificationsCount } from '@/hooks/useNotifications'
-import { 
-  CheckSquare, 
-  Bell, 
-  User, 
-  LogOut, 
+} from "@/components/ui/dropdown-menu";
+import { useUnreadNotificationsCount } from "@/hooks/useNotifications";
+import {
+  CheckSquare,
+  Bell,
+  User,
+  LogOut,
   Menu,
   Home,
   ListTodo,
-  Settings
-} from 'lucide-react'
-import { useState } from 'react'
+  Users,
+} from "lucide-react";
+import { useState } from "react";
 
 export function Header() {
-  const { user, logout, isAuthenticated } = useAuth()
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const { user, logout, isAuthenticated } = useAuth();
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  const { data: unreadCount } = useUnreadNotificationsCount()
+  const { data: unreadCount } = useUnreadNotificationsCount();
 
   if (!isAuthenticated) {
     return (
@@ -45,7 +45,7 @@ export function Header() {
           </div>
         </div>
       </header>
-    )
+    );
   }
 
   return (
@@ -59,29 +59,29 @@ export function Header() {
 
         {/* Navegação Desktop */}
         <nav className="hidden md:flex items-center gap-6">
-          <a 
-            href="/dashboard" 
+          <a
+            href="/dashboard"
             className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             <Home className="h-4 w-4" />
             Dashboard
           </a>
-          <a 
-            href="/tasks" 
+          <a
+            href="/tasks"
             className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             <ListTodo className="h-4 w-4" />
             Tarefas
           </a>
-          <a 
-            href="/notifications" 
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative pr-6"
+          <a
+            href="/notifications"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             <Bell className="h-4 w-4" />
-            Notificações
+            <span>Notificações</span>
             {unreadCount && unreadCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {unreadCount > 9 ? '9+' : unreadCount}
+              <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center shrink-0">
+                {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
           </a>
@@ -96,7 +96,7 @@ export function Header() {
                 <Bell className="h-4 w-4" />
                 {unreadCount && unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                    {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
               </a>
@@ -109,8 +109,10 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-3">
                   <div className="text-right">
-                    <p className="text-sm font-medium">{user?.username}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    <p className="text-sm font-medium">{user?.fullName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user?.email}
+                    </p>
                   </div>
                   <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center">
                     <User className="h-4 w-4 text-primary" />
@@ -121,19 +123,16 @@ export function Header() {
                 <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <a href="/profile" className="flex items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    Perfil
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a href="/settings" className="flex items-center">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Configurações
+                  <a href="/users" className="flex items-center">
+                    <Users className="mr-2 h-4 w-4" />
+                    Usuários
                   </a>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="text-red-600">
+                <DropdownMenuItem
+                  onClick={async () => await logout()}
+                  className="text-red-600"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   Sair
                 </DropdownMenuItem>
@@ -163,39 +162,39 @@ export function Header() {
                 <User className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium">{user?.username}</p>
+                <p className="font-medium">{user?.fullName}</p>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
             </div>
 
             {/* Navegação Mobile */}
             <nav className="space-y-2">
-              <a 
-                href="/dashboard" 
+              <a
+                href="/dashboard"
                 className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors"
                 onClick={() => setShowMobileMenu(false)}
               >
                 <Home className="h-5 w-5" />
                 Dashboard
               </a>
-              <a 
-                href="/tasks" 
+              <a
+                href="/tasks"
                 className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors"
                 onClick={() => setShowMobileMenu(false)}
               >
                 <ListTodo className="h-5 w-5" />
                 Tarefas
               </a>
-              <a 
-                href="/notifications" 
+              <a
+                href="/notifications"
                 className="flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors relative"
                 onClick={() => setShowMobileMenu(false)}
               >
                 <Bell className="h-5 w-5" />
-                Notificações
+                <span>Notificações</span>
                 {unreadCount && unreadCount > 0 && (
-                  <span className="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                  <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
               </a>
@@ -203,12 +202,12 @@ export function Header() {
 
             {/* Ações Mobile */}
             <div className="pt-4 border-t space-y-2">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="w-full justify-start"
-                onClick={() => {
-                  setShowMobileMenu(false)
-                  logout()
+                onClick={async () => {
+                  setShowMobileMenu(false);
+                  await logout();
                 }}
               >
                 <LogOut className="h-4 w-4 mr-2" />
@@ -219,5 +218,5 @@ export function Header() {
         </div>
       )}
     </header>
-  )
+  );
 }

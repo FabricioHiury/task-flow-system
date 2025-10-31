@@ -11,17 +11,14 @@ export function useLogin() {
       return await authService.login(data)
     },
     onSuccess: (response) => {
-      // Armazenar dados no localStorage
       localStorage.setItem('token', response.access_token)
+      localStorage.setItem('refreshToken', response.refresh_token)
       localStorage.setItem('user', JSON.stringify(response.user))
       
-      // Conectar ao WebSocket
       socketService.connect(response.access_token)
       
-      // Invalidar queries relacionadas à autenticação para forçar re-render
       queryClient.invalidateQueries({ queryKey: ['auth'] })
       
-      // Forçar um reload da página para garantir que o AuthContext seja atualizado
       window.location.href = '/dashboard'
     },
     onError: (error: any) => {
@@ -39,8 +36,8 @@ export function useRegister() {
       return await authService.register(data)
     },
     onSuccess: (response) => {
-      // Armazenar dados no localStorage
       localStorage.setItem('token', response.access_token)
+      localStorage.setItem('refreshToken', response.refresh_token)
       localStorage.setItem('user', JSON.stringify(response.user))
       
       socketService.connect(response.access_token)
@@ -66,10 +63,7 @@ export function useLogout() {
       socketService.disconnect()
     },
     onSuccess: () => {
-      // Limpar cache do React Query
       queryClient.clear()
-      
-      // Navegar para a página de login
       navigate({ to: '/login' })
     },
     onError: (error: any) => {
