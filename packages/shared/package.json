@@ -2,13 +2,12 @@
   "name": "@task-flow/shared",
   "version": "1.0.0",
   "description": "Shared types and utilities",
-  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
       "require": "./dist/index.js",
+      "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
   },

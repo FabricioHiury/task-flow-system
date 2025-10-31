@@ -229,9 +229,9 @@ export class NotificationService {
     taskId: string,
     taskTitle: string,
     recipientId: string,
-    dueDate: Date
+    deadline: Date
   ): Promise<Notification> {
-    const daysUntilDue = Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    const daysUntilDue = Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     
     return this.createAndSendNotification({
       type: NotificationType.SYSTEM,
@@ -242,7 +242,7 @@ export class NotificationService {
         title: 'Lembrete de prazo',
         message: `A tarefa "${taskTitle}" vence em ${daysUntilDue} dia(s)`,
         taskTitle,
-        dueDate: dueDate.toISOString(), 
+        deadline: deadline.toISOString(), 
         daysUntilDue 
       },
     });

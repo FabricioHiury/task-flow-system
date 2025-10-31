@@ -65,7 +65,7 @@ export class TaskUpdateDto {
   })
   @IsOptional()
   @IsString()
-  dueDate?: string;
+  deadline?: string;
 
   @ApiProperty({
     description: 'ID do usuário que fez a atualização',

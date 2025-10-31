@@ -8,7 +8,7 @@ export interface CreateTaskDto {
   projectId: string;
   assigneeId?: string;
   priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  dueDate?: Date;
+  deadline?: Date;
   tags?: string[];
   createdBy?: string;
   token?: string;
@@ -20,7 +20,7 @@ export interface UpdateTaskDto {
   status?: 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE' | 'CANCELLED';
   assigneeId?: string;
   priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  dueDate?: Date;
+  deadline?: Date;
   tags?: string[];
   updatedBy?: string;
   token?: string;
@@ -87,9 +87,9 @@ export class TaskServiceClient {
     );
   }
 
-  getTasks(filters: TaskFilters = {}): Observable<any> {
-    this.logger.log(`Getting tasks with filters: ${JSON.stringify(filters)}`);
-    return this.client.send('task.list', filters).pipe(
+  getTasks(userId: string, filters: TaskFilters): Observable<any> {
+    this.logger.log(`Getting tasks with user ${userId}`);
+    return this.client.send('task.list', { userId, ...filters }).pipe(
       timeout(10000),
       catchError((error) => {
         this.logger.error(`Failed to get tasks: ${error.message}`);
@@ -118,7 +118,7 @@ export class TaskServiceClient {
   ): Observable<any> {
     this.logger.log(`Adding comment to task: ${taskId}`);
     return this.client
-      .send('task.comment.create', { taskId, content, authorId, token })
+      .send('create_comment', { taskId: +taskId, content, userId: authorId })
       .pipe(
         timeout(10000),
         catchError((error) => {
@@ -133,11 +133,25 @@ export class TaskServiceClient {
   // Método para obter comentários de uma tarefa
   getComments(taskId: string, token?: string): Observable<any> {
     this.logger.log(`Getting comments for task: ${taskId}`);
-    return this.client.send('task.comment.list', { taskId, token }).pipe(
+    return this.client.send('get_task_comments', { taskId: +taskId }).pipe(
       timeout(10000),
       catchError((error) => {
         this.logger.error(
           `Failed to get comments for task ${taskId}: ${error.message}`,
+        );
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  // Método para deletar comentário
+  deleteComment(commentId: string, userId: string): Observable<any> {
+    this.logger.log(`Deleting comment: ${commentId} by user: ${userId}`);
+    return this.client.send('delete_comment', { commentId: +commentId, userId }).pipe(
+      timeout(10000),
+      catchError((error) => {
+        this.logger.error(
+          `Failed to delete comment ${commentId}: ${error.message}`,
         );
         return throwError(() => error);
       }),

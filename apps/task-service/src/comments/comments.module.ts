@@ -5,10 +5,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { CommentsService } from './comments.service';
 import { CommentsController } from './comments.controller';
 import { Comment } from './comment.entity';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Comment]),
+    UsersModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },

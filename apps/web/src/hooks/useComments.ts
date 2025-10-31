@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { commentService, type Comment, type CreateCommentRequest } from '@/lib/api'
+import { commentService, type CreateCommentRequest } from '@/lib/api'
 
-// Query keys para organização
 export const commentKeys = {
   all: ['comments'] as const,
   lists: () => [...commentKeys.all, 'list'] as const,
@@ -24,10 +23,9 @@ export function useCreateComment() {
 
   return useMutation({
     mutationFn: (data: CreateCommentRequest) => commentService.createComment(data),
-    onSuccess: (newComment) => {
-      // Invalidar a lista de comentários da task
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ 
-        queryKey: commentKeys.list(newComment.taskId) 
+        queryKey: commentKeys.list(variables.taskId) 
       })
     },
     onError: (error: any) => {
@@ -41,70 +39,14 @@ export function useDeleteComment() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => commentService.deleteComment(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: commentKeys.lists() })
+    mutationFn: ({ taskId, commentId }: { taskId: string; commentId: string }) => 
+      commentService.deleteComment(taskId, commentId),
+    onSuccess: (_, variables) => {
+      // Invalidar a query específica do taskId
+      queryClient.invalidateQueries({ queryKey: commentKeys.list(variables.taskId) })
     },
     onError: (error: any) => {
       console.error('Erro ao deletar comentário:', error)
-    },
-  })
-}
-
-// Hook para criar comentário com atualização otimista
-export function useCreateCommentOptimistic() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: (data: CreateCommentRequest) => commentService.createComment(data),
-    onMutate: async (newComment) => {
-      // Cancelar queries em andamento
-      await queryClient.cancelQueries({ 
-        queryKey: commentKeys.list(newComment.taskId) 
-      })
-      
-      // Snapshot do valor anterior
-      const previousComments = queryClient.getQueryData<Comment[]>(
-        commentKeys.list(newComment.taskId)
-      )
-      
-      // Criar comentário temporário para atualização otimista
-      const tempComment: Comment = {
-        id: `temp-${Date.now()}`,
-        content: newComment.content,
-        taskId: newComment.taskId,
-        authorId: 'current-user', // Seria obtido do contexto de auth
-        author: {
-          id: 'current-user',
-          name: 'Você',
-          email: 'user@example.com',
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-      
-      // Atualização otimista
-      queryClient.setQueryData<Comment[]>(
-        commentKeys.list(newComment.taskId),
-        (old) => old ? [...old, tempComment] : [tempComment]
-      )
-      
-      return { previousComments, tempComment }
-    },
-    onError: (_, newComment, context) => {
-      // Reverter em caso de erro
-      if (context?.previousComments) {
-        queryClient.setQueryData(
-          commentKeys.list(newComment.taskId),
-          context.previousComments
-        )
-      }
-    },
-    onSettled: (_, __, newComment) => {
-      // Sempre invalidar após a mutação
-      queryClient.invalidateQueries({ 
-        queryKey: commentKeys.list(newComment.taskId) 
-      })
     },
   })
 }

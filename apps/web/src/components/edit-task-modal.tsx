@@ -35,6 +35,7 @@ const editTaskSchema = z.object({
   description: z.string().optional(),
   status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+  deadline: z.string().optional(),
 })
 
 type EditTaskFormData = z.infer<typeof editTaskSchema>
@@ -56,10 +57,10 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
       description: '',
       status: 'TODO',
       priority: 'MEDIUM',
+      deadline: '',
     },
   })
 
-  // Atualizar o formulário quando a tarefa mudar
   useEffect(() => {
     if (task) {
       form.reset({
@@ -67,6 +68,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
         description: task.description || '',
         status: task.status,
         priority: task.priority,
+        deadline: task.deadline ? task.deadline.split('T')[0] : '', 
       })
     }
   }, [task, form])
@@ -82,6 +84,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
           description: data.description,
           status: data.status,
           priority: data.priority,
+          deadline: data.deadline || undefined,
         },
       })
 
@@ -161,7 +164,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="TODO">A Fazer</SelectItem>
+                      <SelectItem value="TODO">Pendente</SelectItem>
                       <SelectItem value="IN_PROGRESS">Em Progresso</SelectItem>
                       <SelectItem value="DONE">Concluída</SelectItem>
                     </SelectContent>
@@ -189,6 +192,20 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
                       <SelectItem value="HIGH">Alta</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="deadline"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data de Vencimento</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

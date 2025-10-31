@@ -132,7 +132,7 @@ export class TasksService {
     return updatedTask;
   }
 
-  async remove(id: number, userId: string): Promise<void> {
+  async remove(id: number, userId: string): Promise<{ success: boolean; taskId: number; title: string }> {
     // Validate userId is provided
     if (!userId || userId.trim() === '') {
       throw new Error('User ID is required for task deletion');
@@ -149,9 +149,17 @@ export class TasksService {
     this.rabbitClient.emit('notification.task.deleted', {
       id: id.toString(),
       title: task.title,
+      assignedTo: task.assignedTo,
+      createdBy: task.createdBy, 
       deletedBy: userId.trim(),
       deletedAt: new Date(),
     });
+
+    return {
+      success: true,
+      taskId: id,
+      title: task.title,
+    };
   }
 
   async findByStatus(status: TaskStatus, userId?: string): Promise<Task[]> {

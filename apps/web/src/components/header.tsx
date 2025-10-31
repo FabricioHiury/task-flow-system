@@ -75,7 +75,7 @@ export function Header() {
           </a>
           <a 
             href="/notifications" 
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative pr-6"
           >
             <Bell className="h-4 w-4" />
             Notificações
