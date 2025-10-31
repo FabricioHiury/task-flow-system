@@ -1,52 +1,52 @@
-import { createFileRoute, Navigate, Link } from '@tanstack/react-router'
-import { useAuth } from '@/contexts/auth-context'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createFileRoute, Navigate, Link, useSearch } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { 
-  CheckSquare, 
-  Clock, 
-  AlertCircle, 
-  Plus, 
-  Search,
-  Filter,
-  Edit,
-  Trash2,
-  Calendar
-} from 'lucide-react'
+import { useAuth } from '@/contexts/auth-context'
 import { useTasks, useCreateTask, useDeleteTask } from '@/hooks/useTasks'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Plus, Search, Trash2, Edit, CheckSquare, Clock, Calendar } from 'lucide-react'
+import { TaskListSkeleton } from '@/components/skeletons/task-skeleton'
+import { EditTaskModal } from '@/components/edit-task-modal'
+import type { Task } from '@/lib/api'
+import { useUsers } from '@/hooks/useUsers'
 
 const createTaskSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório'),
   description: z.string().optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']).optional(),
-  dueDate: z.string().optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE']).optional(),
+  deadline: z.string().optional(),
+  assignedUserIds: z.array(z.string()).optional(),
 })
 
 type CreateTaskForm = z.infer<typeof createTaskSchema>
 
 function TasksPage() {
   const { isAuthenticated, isLoading } = useAuth()
+  const searchParams = useSearch({ from: '/tasks' })
+  const { data: users = [], isLoading: usersLoading } = useUsers()
+  
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [priorityFilter, setPriorityFilter] = useState<string>('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+
+  // Aplicar filtros dos search params
+  useEffect(() => {
+    if (searchParams?.status) {
+      setStatusFilter(searchParams.status)
+    }
+  }, [searchParams])
 
   const { data: tasks, isLoading: tasksLoading } = useTasks()
   const createTaskMutation = useCreateTask()
@@ -56,10 +56,28 @@ function TasksPage() {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<CreateTaskForm>({
     resolver: zodResolver(createTaskSchema),
+    defaultValues: {
+      status: 'TODO',
+      priority: 'MEDIUM',
+      assignedUserIds: []
+    }
   })
+
+  const selectedUsers = watch('assignedUserIds') || []
+
+  const handleUserToggle = (userId: string) => {
+    const currentUsers = selectedUsers || []
+    if (currentUsers.includes(userId)) {
+      setValue('assignedUserIds', currentUsers.filter(id => id !== userId))
+    } else {
+      setValue('assignedUserIds', [...currentUsers, userId])
+    }
+  }
 
   if (isLoading) {
     return (
@@ -73,6 +91,44 @@ function TasksPage() {
     return <Navigate to="/login" />
   }
 
+  if (tasksLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Tarefas</h1>
+          <Button disabled>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Tarefa
+          </Button>
+        </div>
+        
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Buscar tarefas..."
+                disabled
+                className="w-full"
+              />
+            </div>
+            <Select disabled>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+            </Select>
+            <Select disabled>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Prioridade" />
+              </SelectTrigger>
+            </Select>
+          </div>
+        </div>
+
+        <TaskListSkeleton />
+      </div>
+    )
+  }
+
   const filteredTasks = tasks?.filter((task) => {
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          task.description?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -83,10 +139,22 @@ function TasksPage() {
   }) || []
 
   const onSubmit = (data: CreateTaskForm) => {
-    createTaskMutation.mutate(data, {
+    const taskData = {
+      ...data,
+      status: data.status || 'TODO',
+      priority: data.priority || 'MEDIUM'
+    }
+    createTaskMutation.mutate(taskData, {
       onSuccess: () => {
         setShowCreateForm(false)
-        reset()
+        reset({
+          title: '',
+          description: '',
+          status: 'TODO',
+          priority: 'MEDIUM',
+          deadline: '',
+          assignedUserIds: []
+        })
       }
     })
   }
@@ -97,26 +165,9 @@ function TasksPage() {
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'DONE':
-        return 'bg-green-100 text-green-800'
-      case 'IN_PROGRESS':
-        return 'bg-blue-100 text-blue-800'
-      default:
-        return 'bg-orange-100 text-orange-800'
-    }
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'HIGH':
-        return 'bg-red-100 text-red-800'
-      case 'MEDIUM':
-        return 'bg-yellow-100 text-yellow-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task)
+    setShowEditModal(true)
   }
 
   const getStatusText = (status: string) => {
@@ -125,8 +176,12 @@ function TasksPage() {
         return 'Concluída'
       case 'IN_PROGRESS':
         return 'Em Progresso'
-      default:
+      case 'REVIEW':
+        return 'Em Revisão'
+      case 'TODO':
         return 'Pendente'
+      default:
+        return status
     }
   }
 
@@ -136,9 +191,50 @@ function TasksPage() {
         return 'Alta'
       case 'MEDIUM':
         return 'Média'
-      default:
+      case 'URGENT':
+        return 'Urgente'
+      case 'LOW':
         return 'Baixa'
+      default:
+        return priority
     }
+  }
+
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+      case 'DONE':
+        return 'default'
+      case 'IN_PROGRESS':
+        return 'secondary'
+      case 'REVIEW':
+        return 'outline'
+      case 'TODO':
+        return 'outline'
+      default:
+        return 'outline'
+    }
+  }
+
+  const getPriorityVariant = (priority: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (priority) {
+      case 'URGENT':
+        return 'destructive'
+      case 'HIGH':
+        return 'default'
+      case 'MEDIUM':
+        return 'secondary'
+      case 'LOW':
+        return 'outline'
+      default:
+        return 'outline'
+    }
+  }
+
+  const getAssignedUserNames = (assignedUserIds: string[] = []): string[] => {
+    return assignedUserIds.map(userId => {
+      const user = users.find(u => u.id === userId)
+      return user ? user.fullName : 'Usuário não encontrado'
+    })
   }
 
   return (
@@ -190,7 +286,7 @@ function TasksPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Prioridade</Label>
-                  <Select onValueChange={(value) => register('priority').onChange({ target: { value } })}>
+                  <Select onValueChange={(value) => setValue('priority', value as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT')} defaultValue="MEDIUM">
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a prioridade" />
                     </SelectTrigger>
@@ -198,19 +294,21 @@ function TasksPage() {
                       <SelectItem value="LOW">Baixa</SelectItem>
                       <SelectItem value="MEDIUM">Média</SelectItem>
                       <SelectItem value="HIGH">Alta</SelectItem>
+                      <SelectItem value="URGENT">Urgente</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Status</Label>
-                  <Select onValueChange={(value) => register('status').onChange({ target: { value } })}>
+                  <Select onValueChange={(value) => setValue('status', value as 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE')} defaultValue="TODO">
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="TODO">Pendente</SelectItem>
                       <SelectItem value="IN_PROGRESS">Em Progresso</SelectItem>
+                      <SelectItem value="REVIEW">Em Revisão</SelectItem>
                       <SelectItem value="DONE">Concluída</SelectItem>
                     </SelectContent>
                   </Select>
@@ -218,12 +316,41 @@ function TasksPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dueDate">Data de Vencimento</Label>
+                <Label htmlFor="deadline">Data de Vencimento</Label>
                 <Input
-                  id="dueDate"
+                  id="deadline"
                   type="date"
-                  {...register('dueDate')}
+                  {...register('deadline')}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Atribuir a Usuários</Label>
+                <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                  {usersLoading ? (
+                    <p className="text-sm text-muted-foreground">Carregando usuários...</p>
+                  ) : users.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Nenhum usuário encontrado</p>
+                  ) : (
+                    users.map((user) => (
+                      <div key={user.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`create-${user.id}`}
+                          checked={selectedUsers.includes(user.id)}
+                          onChange={() => handleUserToggle(user.id)}
+                          className="h-4 w-4 rounded border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        />
+                        <label
+                          htmlFor={`create-${user.id}`}
+                          className="text-sm font-medium leading-none cursor-pointer"
+                        >
+                          {user.fullName} ({user.username})
+                        </label>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end gap-2">
@@ -263,6 +390,7 @@ function TasksPage() {
                   <SelectItem value="all">Todos os Status</SelectItem>
                   <SelectItem value="TODO">Pendente</SelectItem>
                   <SelectItem value="IN_PROGRESS">Em Progresso</SelectItem>
+                  <SelectItem value="REVIEW">Em Revisão</SelectItem>
                   <SelectItem value="DONE">Concluída</SelectItem>
                 </SelectContent>
               </Select>
@@ -275,6 +403,7 @@ function TasksPage() {
                   <SelectItem value="LOW">Baixa</SelectItem>
                   <SelectItem value="MEDIUM">Média</SelectItem>
                   <SelectItem value="HIGH">Alta</SelectItem>
+                  <SelectItem value="URGENT">Urgente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -304,10 +433,10 @@ function TasksPage() {
                       >
                         <h3 className="font-semibold text-lg">{task.title}</h3>
                       </Link>
-                      <Badge variant={task.status === 'DONE' ? 'default' : task.status === 'IN_PROGRESS' ? 'secondary' : 'outline'}>
+                      <Badge variant={getStatusVariant(task.status)}>
                         {getStatusText(task.status)}
                       </Badge>
-                      <Badge variant={task.priority === 'HIGH' ? 'destructive' : task.priority === 'MEDIUM' ? 'default' : 'secondary'}>
+                      <Badge variant={getPriorityVariant(task.priority)}>
                         {getPriorityText(task.priority)}
                       </Badge>
                     </div>
@@ -316,22 +445,39 @@ function TasksPage() {
                       <p className="text-muted-foreground mb-3">{task.description}</p>
                     )}
                     
+                    {task.assignedTo && task.assignedTo.length > 0 && (
+                      <div className="mb-3">
+                        <span className="text-sm font-medium text-muted-foreground">Atribuído a: </span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {getAssignedUserNames(task.assignedTo).map((userName, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {userName}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
                         Criada em {new Date(task.createdAt).toLocaleDateString('pt-BR')}
                       </span>
-                      {task.dueDate && (
+                      {task.deadline && (
                         <span className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
-                          Vence em {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                          Vence em {new Date(task.deadline).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                         </span>
                       )}
                     </div>
                   </div>
                   
                   <div className="flex gap-2 ml-4">
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleEditTask(task)}
+                    >
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
@@ -369,10 +515,21 @@ function TasksPage() {
           </CardContent>
         </Card>
       )}
+
+      <EditTaskModal
+        task={editingTask}
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+      />
     </div>
   )
 }
 
 export const Route = createFileRoute('/tasks')({
   component: TasksPage,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      status: (search.status as string) || undefined,
+    }
+  },
 })

@@ -1,4 +1,4 @@
-import { createFileRoute, Navigate, useNavigate, Link } from '@tanstack/react-router'
+import { createFileRoute, Navigate } from '@tanstack/react-router'
 import { useAuth } from '@/contexts/auth-context'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -12,9 +12,10 @@ import { CheckSquare, Eye, EyeOff } from 'lucide-react'
 import { useRegister } from '@/hooks/useAuth'
 
 const registerSchema = z.object({
-  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  username: z.string().min(3, 'Username deve ter pelo menos 3 caracteres').max(50, 'Username deve ter no máximo 50 caracteres'),
+  fullName: z.string().min(2, 'Nome completo deve ter pelo menos 2 caracteres').max(100, 'Nome completo deve ter no máximo 100 caracteres').optional(),
+  email: z.string().email('Email inválido').max(255, 'Email deve ter no máximo 255 caracteres'),
+  password: z.string().min(8, 'Senha deve ter pelo menos 8 caracteres').max(100, 'Senha deve ter no máximo 100 caracteres'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Senhas não coincidem",
@@ -47,9 +48,10 @@ function RegisterPage() {
 
   const onSubmit = async (data: RegisterForm) => {
     registerMutation.mutate({
-      name: data.name,
+      username: data.username,
       email: data.email,
       password: data.password,
+      fullName: data.fullName,
     })
   }
 
@@ -70,10 +72,27 @@ function RegisterPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="name"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome</FormLabel>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Seu nome de usuário"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome Completo</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Seu nome completo"
@@ -171,7 +190,32 @@ function RegisterPage() {
 
               {registerMutation.error && (
                 <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
-                  {registerMutation.error?.response?.data?.message || 'Erro ao criar conta'}
+                  {(() => {
+                    const error = registerMutation.error as any;
+                    
+                    // Se o erro tem detalhes de validação específicos
+                    if (error?.response?.data?.error?.details) {
+                      const details = error.response.data.error.details;
+                      return (
+                        <div className="space-y-1">
+                          <div className="font-medium">Erro de validação:</div>
+                          {details.map((detail: any, index: number) => (
+                            <div key={index} className="text-xs">
+                              • {detail.message}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    
+                    // Se tem uma mensagem de erro específica
+                    if (error?.response?.data?.error?.message) {
+                      return error.response.data.error.message;
+                    }
+                    
+                    // Fallback para mensagem genérica
+                    return error?.response?.data?.message || 'Erro ao criar conta';
+                  })()}
                 </div>
               )}
 

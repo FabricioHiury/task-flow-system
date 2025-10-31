@@ -2,12 +2,7 @@ import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-
-export interface RegisterDto {
-  email: string;
-  username: string;
-  password: string;
-}
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -16,16 +11,19 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async create(registerDto: RegisterDto): Promise<User> {
+  async create(createUserDto: CreateUserDto): Promise<User> {
     const existingUser = await this.userRepository.findOne({
-      where: [{ email: registerDto.email }, { username: registerDto.username }],
+      where: [
+        { email: createUserDto.email },
+        { username: createUserDto.username },
+      ],
     });
 
     if (existingUser) {
-      throw new ConflictException('Email or username already exists');
+      throw new ConflictException('Email ou username já existe');
     }
 
-    const user = this.userRepository.create(registerDto);
+    const user = this.userRepository.create(createUserDto);
     return this.userRepository.save(user);
   }
 
@@ -43,7 +41,7 @@ export class UsersService {
 
   async findAll(): Promise<User[]> {
     return this.userRepository.find({
-      select: ['id', 'email', 'username', 'createdAt', 'updatedAt'],
+      select: ['id', 'email', 'username', 'fullName', 'createdAt', 'updatedAt'],
     });
   }
 }

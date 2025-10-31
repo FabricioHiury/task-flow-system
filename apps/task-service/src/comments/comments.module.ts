@@ -5,13 +5,14 @@ import { JwtModule } from '@nestjs/jwt';
 import { CommentsService } from './comments.service';
 import { CommentsController } from './comments.controller';
 import { Comment } from './comment.entity';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Comment]),
+    UsersModule,
     JwtModule.register({
-      secret:
-        process.env.JWT_SECRET || 'your-super-secret-key-change-in-production',
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1h' },
     }),
     ClientsModule.register([
@@ -22,7 +23,7 @@ import { Comment } from './comment.entity';
           urls: [
             process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672',
           ],
-          queue: 'task_queue',
+          queue: 'notifications_queue',
           queueOptions: {
             durable: false,
           },

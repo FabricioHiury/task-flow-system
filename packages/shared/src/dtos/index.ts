@@ -1,5 +1,6 @@
-import { IsEmail, IsString, MinLength, IsEnum, IsOptional, IsDateString, IsArray, IsUUID } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsEnum, IsOptional, IsDateString, IsArray, IsUUID, IsInt } from 'class-validator';
 import { TaskPriority, TaskStatus } from '../enums';
+import { Transform, Type } from 'class-transformer';
 
 export class RegisterDto {
   @IsEmail()
@@ -32,7 +33,8 @@ export class CreateTaskDto {
   description?: string;
 
   @IsDateString()
-  deadline: string;
+  @IsOptional()
+  deadline?: string;
 
   @IsEnum(TaskPriority)
   priority: TaskPriority;
@@ -79,8 +81,14 @@ export class CreateCommentDto {
 
 export class PaginationDto {
   @IsOptional()
-  page?: number = 1;
+  @Type(() => Number)
+  @IsInt()
+  @Transform(({ value }) => (value !== undefined && value !== null ? value : 1))
+  page: number = 1;
 
   @IsOptional()
-  size?: number = 10;
+  @Type(() => Number)
+  @IsInt()
+  @Transform(({ value }) => (value !== undefined && value !== null ? value : 10))
+  size: number = 10;
 }

@@ -15,7 +15,7 @@ export function useTasks() {
   return useQuery({
     queryKey: taskKeys.lists(),
     queryFn: () => taskService.getTasks(),
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 30, // 30 segundos
   })
 }
 
@@ -25,7 +25,7 @@ export function useTask(id: string) {
     queryKey: taskKeys.detail(id),
     queryFn: () => taskService.getTask(id),
     enabled: !!id,
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 30, // 30 segundos
   })
 }
 
@@ -59,7 +59,16 @@ export function useUpdateTask() {
       // Atualizar a task específica no cache
       queryClient.setQueryData(taskKeys.detail(id), updatedTask)
       
-      // Invalidar a lista de tasks para refletir as mudanças
+      // Atualizar a lista de tasks de forma otimista
+      const currentTasks = queryClient.getQueryData<Task[]>(taskKeys.lists())
+      if (currentTasks) {
+        const updatedTasks = currentTasks.map(task => 
+          task.id === updatedTask.id ? updatedTask : task
+        )
+        queryClient.setQueryData(taskKeys.lists(), updatedTasks)
+      }
+      
+      // Invalidar para garantir dados frescos
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
     },
     onError: (error: any) => {
@@ -112,7 +121,7 @@ export function useUpdateTaskStatus() {
       
       return { previousTask }
     },
-    onError: (err, { id }, context) => {
+    onError: (_, { id }, context) => {
       // Reverter em caso de erro
       if (context?.previousTask) {
         queryClient.setQueryData(taskKeys.detail(id), context.previousTask)

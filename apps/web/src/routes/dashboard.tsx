@@ -1,19 +1,61 @@
-import { createFileRoute, Navigate } from '@tanstack/react-router'
+import { createFileRoute, Navigate, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@/contexts/auth-context'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CheckSquare, Clock, AlertCircle, Plus, TrendingUp } from 'lucide-react'
 import { useTasks } from '@/hooks/useTasks'
+import { DashboardStatsSkeleton, DashboardRecentTasksSkeleton } from '@/components/skeletons/dashboard-skeleton'
+import { Skeleton } from '@/components/ui/skeleton'
 
 function DashboardPage() {
   const { isAuthenticated, isLoading, user } = useAuth()
+  const navigate = useNavigate()
 
   const { data: tasks, isLoading: tasksLoading } = useTasks()
 
+  const handleCreateTask = () => {
+    navigate({ to: '/tasks', search: { status: undefined } })
+  }
+
+  const handleViewAllTasks = () => {
+    navigate({ to: '/tasks', search: { status: undefined } })
+  }
+
+  const handleViewInProgressTasks = () => {
+    navigate({ to: '/tasks', search: { status: 'IN_PROGRESS' } })
+  }
+
+  const handleViewPendingTasks = () => {
+    navigate({ to: '/tasks', search: { status: 'TODO' } })
+  }
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <Skeleton className="h-9 w-64 mb-2" />
+          <Skeleton className="h-5 w-96" />
+        </div>
+        
+        <DashboardStatsSkeleton />
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          <DashboardRecentTasksSkeleton />
+          
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-10 w-full" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
@@ -35,7 +77,7 @@ function DashboardPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">
-          Bem-vindo, {user?.name || 'Usuário'}!
+          Bem-vindo, {user?.username || 'Usuário'}!
         </h1>
         <p className="text-muted-foreground mt-2">
           Aqui está um resumo das suas tarefas e atividades recentes.
@@ -108,8 +150,16 @@ function DashboardPage() {
           </CardHeader>
           <CardContent>
             {tasksLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-3/4 mb-2" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                ))}
               </div>
             ) : recentTasks.length > 0 ? (
               <div className="space-y-4">
@@ -128,10 +178,16 @@ function DashboardPage() {
                           ? 'bg-green-100 text-green-800' 
                           : task.status === 'IN_PROGRESS'
                           ? 'bg-blue-100 text-blue-800'
-                          : 'bg-orange-100 text-orange-800'
+                          : task.status === 'REVIEW'
+                          ? 'bg-purple-100 text-purple-800'
+                          : task.status === 'TODO'
+                          ? 'bg-gray-100 text-gray-800'
+                          : 'bg-gray-100 text-gray-800'
                       }`}>
                         {task.status === 'DONE' ? 'Concluída' : 
-                         task.status === 'IN_PROGRESS' ? 'Em Progresso' : 'Pendente'}
+                         task.status === 'IN_PROGRESS' ? 'Em Progresso' : 
+                         task.status === 'REVIEW' ? 'Em Revisão' : 
+                         task.status === 'TODO' ? 'Pendente' : 'Pendente'}
                       </span>
                     </div>
                   </div>
@@ -141,7 +197,7 @@ function DashboardPage() {
               <div className="text-center py-8">
                 <CheckSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">Nenhuma tarefa encontrada</p>
-                <Button className="mt-4" size="sm">
+                <Button className="mt-4" size="sm" onClick={handleCreateTask}>
                   <Plus className="h-4 w-4 mr-2" />
                   Criar primeira tarefa
                 </Button>
@@ -160,22 +216,38 @@ function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={handleCreateTask}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Criar Nova Tarefa
               </Button>
               
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={handleViewAllTasks}
+              >
                 <CheckSquare className="h-4 w-4 mr-2" />
                 Ver Todas as Tarefas
               </Button>
               
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={handleViewInProgressTasks}
+              >
                 <Clock className="h-4 w-4 mr-2" />
                 Tarefas em Progresso
               </Button>
               
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={handleViewPendingTasks}
+              >
                 <AlertCircle className="h-4 w-4 mr-2" />
                 Tarefas Pendentes
               </Button>

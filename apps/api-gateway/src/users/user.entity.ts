@@ -24,6 +24,9 @@ export class User {
   @Exclude()
   password: string;
 
+  @Column({ nullable: true })
+  fullName?: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

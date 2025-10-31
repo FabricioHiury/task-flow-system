@@ -1,19 +1,22 @@
 import { createFileRoute, useNavigate, useParams } from '@tanstack/react-router'
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ArrowLeft, Calendar, Clock, Flag, MessageCircle, Send, Trash2, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useTask } from '@/hooks/useTasks'
 import { useComments, useCreateComment, useDeleteComment } from '@/hooks/useComments'
+import { useUsers } from '@/hooks/useUsers'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from '@/hooks/use-toast'
+import { TaskSkeleton } from '@/components/skeletons/task-skeleton'
+import { CommentListSkeleton } from '@/components/skeletons/comment-skeleton'
+import { TaskHistory } from '@/components/task-history'
 
 const commentSchema = z.object({
   content: z.string().min(1, 'Comentário não pode estar vazio').max(500, 'Comentário muito longo'),
@@ -33,6 +36,7 @@ function TaskDetailPage() {
   
   const { data: task, isLoading: taskLoading } = useTask(taskId)
   const { data: comments = [], isLoading: commentsLoading } = useComments(taskId)
+  const { data: users = [] } = useUsers()
   const createCommentMutation = useCreateComment()
   const deleteCommentMutation = useDeleteComment()
 
@@ -42,6 +46,13 @@ function TaskDetailPage() {
       content: '',
     },
   })
+
+  const getAssignedUserNames = (assignedUserIds: string[] = []): string[] => {
+    return assignedUserIds.map(userId => {
+      const user = users.find(u => u.id === userId)
+      return user ? user.fullName : 'Usuário não encontrado'
+    })
+  }
 
   const onSubmitComment = async (data: CommentForm) => {
     try {
@@ -65,7 +76,7 @@ function TaskDetailPage() {
 
   const handleDeleteComment = async (commentId: string) => {
     try {
-      await deleteCommentMutation.mutateAsync(commentId)
+      await deleteCommentMutation.mutateAsync({ taskId, commentId })
       toast({
         title: 'Comentário removido',
         description: 'O comentário foi removido com sucesso.',
@@ -82,9 +93,11 @@ function TaskDetailPage() {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'TODO':
-        return 'A Fazer'
+        return 'Pendente'
       case 'IN_PROGRESS':
         return 'Em Progresso'
+      case 'REVIEW':
+        return 'Em Revisão'
       case 'DONE':
         return 'Concluída'
       default:
@@ -100,15 +113,47 @@ function TaskDetailPage() {
         return 'Média'
       case 'HIGH':
         return 'Alta'
+      case 'URGENT':
+        return 'Urgente'
       default:
         return priority
+    }
+  }
+
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+      case 'DONE':
+        return 'default'
+      case 'IN_PROGRESS':
+        return 'secondary'
+      case 'REVIEW':
+        return 'outline'
+      case 'TODO':
+        return 'outline'
+      default:
+        return 'outline'
+    }
+  }
+
+  const getPriorityVariant = (priority: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (priority) {
+      case 'URGENT':
+        return 'destructive'
+      case 'HIGH':
+        return 'default'
+      case 'MEDIUM':
+        return 'secondary'
+      case 'LOW':
+        return 'outline'
+      default:
+        return 'outline'
     }
   }
 
   if (taskLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <TaskSkeleton />
       </div>
     )
   }
@@ -123,7 +168,7 @@ function TaskDetailPage() {
               <p className="text-muted-foreground mb-4">
                 A tarefa que você está procurando não existe ou foi removida.
               </p>
-              <Button onClick={() => navigate({ to: '/tasks' })}>
+              <Button onClick={() => navigate({ to: '/tasks', search: { status: undefined } })}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Voltar para Tarefas
               </Button>
@@ -141,7 +186,7 @@ function TaskDetailPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate({ to: '/tasks' })}
+          onClick={() => navigate({ to: '/tasks', search: { status: undefined } })}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar
@@ -156,10 +201,10 @@ function TaskDetailPage() {
             <div className="space-y-2">
               <CardTitle className="text-xl">{task.title}</CardTitle>
               <div className="flex items-center gap-2">
-                <Badge variant={task.status === 'DONE' ? 'default' : task.status === 'IN_PROGRESS' ? 'secondary' : 'outline'}>
+                <Badge variant={getStatusVariant(task.status)}>
                   {getStatusText(task.status)}
                 </Badge>
-                <Badge variant={task.priority === 'HIGH' ? 'destructive' : task.priority === 'MEDIUM' ? 'default' : 'secondary'}>
+                <Badge variant={getPriorityVariant(task.priority)}>
                   <Flag className="h-3 w-3 mr-1" />
                   {getPriorityText(task.priority)}
                 </Badge>
@@ -175,15 +220,29 @@ function TaskDetailPage() {
             </div>
           )}
           
+          {task.assignedTo && task.assignedTo.length > 0 && (
+            <div>
+              <h4 className="font-semibold mb-2">Atribuído a</h4>
+              <div className="flex flex-wrap gap-2">
+                {getAssignedUserNames(task.assignedTo).map((userName, index) => (
+                  <Badge key={index} variant="outline" className="text-sm">
+                    <User className="h-3 w-3 mr-1" />
+                    {userName}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span>Criada em: {new Date(task.createdAt).toLocaleDateString('pt-BR')}</span>
             </div>
-            {task.dueDate && (
+            {task.deadline && (
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>Vence em: {new Date(task.dueDate).toLocaleDateString('pt-BR')}</span>
+                <span>Vence em: {new Date(task.deadline).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</span>
               </div>
             )}
           </div>
@@ -238,9 +297,7 @@ function TaskDetailPage() {
 
           {/* Comments List */}
           {commentsLoading ? (
-            <div className="flex justify-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            </div>
+            <CommentListSkeleton />
           ) : comments.length > 0 ? (
             <div className="space-y-4">
               {comments.map((comment) => (
@@ -248,7 +305,7 @@ function TaskDetailPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{comment.author.name}</span>
+                      <span className="font-medium">{comment.user?.fullName || comment.username || comment.createdBy}</span>
                       <span className="text-sm text-muted-foreground">
                         {new Date(comment.createdAt).toLocaleDateString('pt-BR')} às{' '}
                         {new Date(comment.createdAt).toLocaleTimeString('pt-BR', {
@@ -257,7 +314,7 @@ function TaskDetailPage() {
                         })}
                       </span>
                     </div>
-                    {user && comment.authorId === user.id && (
+                    {user && comment.createdBy === user.id && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -282,6 +339,9 @@ function TaskDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Task History */}
+      <TaskHistory taskId={taskId} />
     </div>
   )
 }

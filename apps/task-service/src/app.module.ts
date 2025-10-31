@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TasksModule } from './tasks/tasks.module';
 import { CommentsModule } from './comments/comments.module';
+import { HealthModule } from './health/health.module';
 import { databaseConfig } from './config/database.config';
 
 @Module({
@@ -15,6 +16,7 @@ import { databaseConfig } from './config/database.config';
     TypeOrmModule.forRoot(databaseConfig),
     TasksModule,
     CommentsModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
